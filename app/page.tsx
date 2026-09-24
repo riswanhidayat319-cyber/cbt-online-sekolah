@@ -3,12 +3,9 @@
 import React, { useState, useEffect } from 'react';
 
 export default function CBTApp() {
-// State aplikasi
 const [view, setView] = useState<'portal' | 'exam' | 'result' | 'admin'>('portal');
-const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 const [adminTab, setAdminTab] = useState<'rekap' | 'siswa' | 'soal' | 'token'>('rekap');
 
-// LocalStorage Data
 const [students, setStudents] = useState<any[]>([]);
 const [questions, setQuestions] = useState<any[]>([]);
 const [results, setResults] = useState<any[]>([]);
@@ -19,19 +16,18 @@ duration: 60,
 adminPassword: 'admin123'
 });
 
-// Ujian Session State
 const [loginForm, setLoginForm] = useState({ id: '', name: '', token: '' });
 const [currentSession, setCurrentSession] = useState<{
-student: any;
+student: { id: string; name: string } | null;
 answers: { [key: number]: string };
 currentIndex: number;
 timeLeft: number;
 }>({ student: null, answers: {}, currentIndex: 0, timeLeft: 60 * 60 });
 
-// Form Tambah Siswa & Soal & Setting
-const [newStudent, setNewStudent] = useState({ id: '', name: '', cls: 'SMP Kelas 7' });
+const [newStudent, setNewStudent] = useState({ id: '', name: '', class: 'SMP Kelas 7' });
 const [newQuestion, setNewQuestion] = useState({ subject: 'Matematika', text: '', a: '', b: '', c: '', d: '', ans: 'A' });
 const [bulkJson, setBulkJson] = useState('');
+const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
 useEffect(() => {
 const savedStudents = localStorage.getItem('cbt_students');
@@ -39,8 +35,9 @@ const savedQuestions = localStorage.getItem('cbt_questions');
 const savedResults = localStorage.getItem('cbt_results');
 const savedSettings = localStorage.getItem('cbt_settings');
 
-if (savedStudents) setStudents(JSON.parse(savedStudents));
-else {
+if (savedStudents) {
+  setStudents(JSON.parse(savedStudents));
+} else {
   const defaultStudents = [
     { id: '7A-001', name: 'Ahmad Fauzi', class: 'SMP Kelas 7' },
     { id: '8B-001', name: 'Budi Santoso', class: 'SMP Kelas 8' },
@@ -50,8 +47,9 @@ else {
   localStorage.setItem('cbt_students', JSON.stringify(defaultStudents));
 }
 
-if (savedQuestions) setQuestions(JSON.parse(savedQuestions));
-else {
+if (savedQuestions) {
+  setQuestions(JSON.parse(savedQuestions));
+} else {
   const defaultQuestions = [
     { id: 1, subject: 'Matematika', text: 'Berapakah hasil dari 15 + 25 x 2?', options: ['80', '65', '50', '90'], answer: 'B' },
     { id: 2, subject: 'Bahasa Indonesia', text: 'Sinonim dari kata "Cermat" adalah...', options: ['Ceroboh', 'Teliti', 'Cepat', 'Lambat'], answer: 'B' }
@@ -70,9 +68,8 @@ const saveToStorage = (key: string, data: any) => {
 localStorage.setItem(key, JSON.stringify(data));
 };
 
-// Timer Ujian
 useEffect(() => {
-let timer: any;
+let timer: ReturnType;
 if (view === 'exam' && currentSession.timeLeft > 0) {
 timer = setInterval(() => {
 setCurrentSession(prev => {
@@ -119,8 +116,8 @@ const score = Math.round((correct / questions.length) * 100);
 
 const newResult = {
   id: Date.now(),
-  studentId: currentSession.student.id,
-  studentName: currentSession.student.name,
+  studentId: currentSession.student?.id || 'Unknown',
+  studentName: currentSession.student?.name || 'Siswa',
   subject: settings.title,
   score,
   timestamp: new Date().toLocaleString('id-ID')
@@ -145,21 +142,33 @@ alert('Password admin salah!');
 }
 };
 
+const deleteQuestion = (idx: number) => {
+const updated = questions.filter((_, i) => i !== idx);
+setQuestions(updated);
+saveToStorage('cbt_questions', updated);
+};
+
+const deleteResult = (id: number) => {
+const updated = results.filter((r: any) => r.id !== id);
+setResults(updated);
+saveToStorage('cbt_results', updated);
+};
+
 return (
 
-{/* Header */}
 
 
 
 CBT.EDU
+
+
 Terhubung Cloud
 
 
 
 {view === 'admin' ? 'Administrator' : 'Portal Siswa'}
-
 {view === 'admin' ? (
-<button onClick={() => { setView('portal'); setIsAdminLoggedIn(false); }} className="text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-1.5 rounded-lg font-medium">
+<button onClick={() => { setView('portal'); setIsAdminLoggedIn(false); }} className="text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-1.5 rounded-lg font-medium transition">
 Keluar Admin
 
 ) : (
@@ -171,9 +180,7 @@ Login Admin
 
 
 
-  {/* Main Content */}
   <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-8">
-    {/* VIEW 1: PORTAL SISWA */}
     {view === 'portal' && (
       <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
         <div className="text-center mb-6">
@@ -200,7 +207,6 @@ Login Admin
       </div>
     )}
 
-    {/* VIEW 2: RUANG UJIAN */}
     {view === 'exam' && (
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6 flex justify-between items-center">
@@ -248,7 +254,7 @@ Login Admin
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-3">Navigasi Soal</h3>
               <div className="grid grid-cols-5 gap-2">
-                {questions.map((_, idx) => {
+                {questions.map((_, idx: number) => {
                   const answered = currentSession.answers[idx] !== undefined;
                   const active = currentSession.currentIndex === idx;
                   return (
@@ -267,7 +273,6 @@ Login Admin
       </div>
     )}
 
-    {/* VIEW 3: HASIL UJIAN */}
     {view === 'result' && (
       <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
         <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">✓</div>
@@ -284,7 +289,6 @@ Login Admin
       </div>
     )}
 
-    {/* VIEW 4: ADMIN DASHBOARD */}
     {view === 'admin' && (
       <div className="space-y-6">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex justify-between items-center">
@@ -294,15 +298,13 @@ Login Admin
           </div>
         </div>
 
-        {/* Admin Tabs */}
-        <div className="flex border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 space-x-4">
-          <button onClick={() => setAdminTab('rekap')} className={`px-6 py-3 border-b-2 font-semibold text-sm ${adminTab === 'rekap' ? 'border-black text-black' : 'border-transparent text-slate-500'}`}>Rekap Nilai</button>
-          <button onClick={() => setAdminTab('siswa')} className={`px-6 py-3 border-b-2 font-semibold text-sm ${adminTab === 'siswa' ? 'border-black text-black' : 'border-transparent text-slate-500'}`}>Master Data Siswa</button>
-          <button onClick={() => setAdminTab('soal')} className={`px-6 py-3 border-b-2 font-semibold text-sm ${adminTab === 'soal' ? 'border-black text-black' : 'border-transparent text-slate-500'}`}>Bank Soal & Import</button>
-          <button onClick={() => setAdminTab('token')} className={`px-6 py-3 border-b-2 font-semibold text-sm ${adminTab === 'token' ? 'border-black text-black' : 'border-transparent text-slate-500'}`}>Pengaturan & Password</button>
+        <div className="flex border-b border-slate-200 bg-white rounded-t-2xl px-4 pt-2 space-x-4 overflow-x-auto">
+          <button onClick={() => setAdminTab('rekap')} className={`px-6 py-3 border-b-2 font-semibold text-sm whitespace-nowrap ${adminTab === 'rekap' ? 'border-black text-black' : 'border-transparent text-slate-500'}`}>Rekap Nilai</button>
+          <button onClick={() => setAdminTab('siswa')} className={`px-6 py-3 border-b-2 font-semibold text-sm whitespace-nowrap ${adminTab === 'siswa' ? 'border-black text-black' : 'border-transparent text-slate-500'}`}>Master Data Siswa</button>
+          <button onClick={() => setAdminTab('soal')} className={`px-6 py-3 border-b-2 font-semibold text-sm whitespace-nowrap ${adminTab === 'soal' ? 'border-black text-black' : 'border-transparent text-slate-500'}`}>Bank Soal & Import</button>
+          <button onClick={() => setAdminTab('token')} className={`px-6 py-3 border-b-2 font-semibold text-sm whitespace-nowrap ${adminTab === 'token' ? 'border-black text-black' : 'border-transparent text-slate-500'}`}>Pengaturan & Password</button>
         </div>
 
-        {/* TAB REKAP */}
         {adminTab === 'rekap' && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <div className="flex justify-between items-center mb-4">
@@ -319,36 +321,41 @@ Login Admin
                 <button onClick={() => { if(confirm('Hapus seluruh arsip nilai lama?')) { setResults([]); saveToStorage('cbt_results', []); }}} className="bg-rose-50 text-rose-700 text-xs px-3 py-2 rounded-xl font-medium">Hapus Data Lama</button>
               </div>
             </div>
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500 font-semibold">
-                  <th className="p-3">No Peserta</th>
-                  <th className="p-3">Nama Siswa</th>
-                  <th className="p-3">Ujian</th>
-                  <th className="p-3">Nilai</th>
-                  <th className="p-3">Waktu</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.length === 0 ? (
-                  <tr><td colSpan={5} className="p-6 text-center text-slate-400">Belum ada data rekapitulasi ujian.</td></tr>
-                ) : (
-                  results.map((r: any, idx: number) => (
-                    <tr key={idx} className="border-b border-slate-100">
-                      <td className="p-3 font-mono">{r.studentId}</td>
-                      <td className="p-3">{r.studentName}</td>
-                      <td className="p-3 text-xs text-slate-500">{r.subject}</td>
-                      <td className="p-3 font-bold">{r.score}</td>
-                      <td className="p-3 text-xs text-slate-400">{r.timestamp}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500 font-semibold">
+                    <th className="p-3">No Peserta</th>
+                    <th className="p-3">Nama Siswa</th>
+                    <th className="p-3">Ujian</th>
+                    <th className="p-3">Nilai</th>
+                    <th className="p-3">Waktu</th>
+                    <th className="p-3 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.length === 0 ? (
+                    <tr><td colSpan={6} className="p-6 text-center text-slate-400">Belum ada data rekapitulasi ujian.</td></tr>
+                  ) : (
+                    results.map((r: any) => (
+                      <tr key={r.id} className="border-b border-slate-100">
+                        <td className="p-3 font-mono">{r.studentId}</td>
+                        <td className="p-3">{r.studentName}</td>
+                        <td className="p-3 text-xs text-slate-500">{r.subject}</td>
+                        <td className="p-3 font-bold">{r.score}</td>
+                        <td className="p-3 text-xs text-slate-400">{r.timestamp}</td>
+                        <td className="p-3 text-center">
+                          <button onClick={() => deleteResult(r.id)} className="text-rose-600 hover:underline text-xs font-medium">Hapus</button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
-        {/* TAB SISWA */}
         {adminTab === 'siswa' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
@@ -358,7 +365,7 @@ Login Admin
                 const updated = [...students, newStudent];
                 setStudents(updated);
                 saveToStorage('cbt_students', updated);
-                setNewStudent({ id: '', name: '', cls: 'SMP Kelas 7' });
+                setNewStudent({ id: '', name: '', class: 'SMP Kelas 7' });
                 alert('Siswa berhasil ditambahkan');
               }} className="space-y-4">
                 <div>
@@ -371,7 +378,7 @@ Login Admin
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">Tingkat Kelas</label>
-                  <select value={newStudent.cls} onChange={e => setNewStudent({...newStudent, cls: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm bg-white">
+                  <select value={newStudent.class} onChange={e => setNewStudent({...newStudent, class: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm bg-white">
                     <option value="SMP Kelas 7">SMP Kelas 7</option>
                     <option value="SMP Kelas 8">SMP Kelas 8</option>
                     <option value="SMP Kelas 9">SMP Kelas 9</option>
@@ -397,119 +404,141 @@ Login Admin
                   saveToStorage('cbt_students', sample);
                 }} className="text-xs text-blue-600 font-medium hover:underline">Muat Contoh Siswa (SMP 7,8,9)</button>
               </div>
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b text-xs uppercase text-slate-500 font-semibold">
-                    <th className="p-3">No Peserta</th>
-                    <th className="p-3">Nama</th>
-                    <th className="p-3">Kelas</th>
-                    <th className="p-3 text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((s, idx) => (
-                    <tr key={idx} className="border-b">
-                      <td className="p-3 font-mono">{s.id}</td>
-                      <td className="p-3">{s.name}</td>
-                      <td className="p-3"><span className="bg-slate-100 text-xs px-2.5 py-1 rounded">{s.class}</span></td>
-                      <td className="p-3 text-center">
-                        <button onClick={() => {
-                          const updated = students.filter((_, i) => i !== idx);
-                          setStudents(updated);
-                          saveToStorage('cbt_students', updated);
-                        }} className="text-rose-600 text-xs">Hapus</button>
-                      </td>
+              <div className="overflow-x-auto max-h-96">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b text-xs uppercase text-slate-500 font-semibold">
+                      <th className="p-3">No Peserta</th>
+                      <th className="p-3">Nama</th>
+                      <th className="p-3">Kelas</th>
+                      <th className="p-3 text-center">Aksi</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {students.map((s, idx: number) => (
+                      <tr key={idx} className="border-b">
+                        <td className="p-3 font-mono">{s.id}</td>
+                        <td className="p-3">{s.name}</td>
+                        <td className="p-3"><span className="bg-slate-100 text-xs px-2.5 py-1 rounded">{s.class}</span></td>
+                        <td className="p-3 text-center">
+                          <button onClick={() => {
+                            const updated = students.filter((_, i: number) => i !== idx);
+                            setStudents(updated);
+                            saveToStorage('cbt_students', updated);
+                          }} className="text-rose-600 text-xs font-medium">Hapus</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
 
-        {/* TAB SOAL */}
         {adminTab === 'soal' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-base font-bold text-slate-900 mb-2">Buat Soal Manual</h3>
-              <form onSubmit={e => {
-                e.preventDefault();
-                const q = {
-                  id: Date.now(),
-                  subject: newQuestion.subject,
-                  text: newQuestion.text,
-                  options: [newQuestion.a, newQuestion.b, newQuestion.c, newQuestion.d],
-                  answer: newQuestion.ans
-                };
-                const updated = [...questions, q];
-                setQuestions(updated);
-                saveToStorage('cbt_questions', updated);
-                setNewQuestion({ subject: 'Matematika', text: '', a: '', b: '', c: '', d: '', ans: 'A' });
-                alert('Soal berhasil ditambahkan');
-              }} className="space-y-3">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h3 className="text-base font-bold text-slate-900 mb-2">Buat Soal Manual</h3>
+                <form onSubmit={e => {
+                  e.preventDefault();
+                  const q = {
+                    id: Date.now(),
+                    subject: newQuestion.subject,
+                    text: newQuestion.text,
+                    options: [newQuestion.a, newQuestion.b, newQuestion.c, newQuestion.d],
+                    answer: newQuestion.ans
+                  };
+                  const updated = [...questions, q];
+                  setQuestions(updated);
+                  saveToStorage('cbt_questions', updated);
+                  setNewQuestion({ subject: 'Matematika', text: '', a: '', b: '', c: '', d: '', ans: 'A' });
+                  alert('Soal berhasil ditambahkan');
+                }} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran</label>
+                    <input type="text" required value={newQuestion.subject} onChange={e => setNewQuestion({...newQuestion, subject: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Pertanyaan</label>
+                    <textarea required rows={2} value={newQuestion.text} onChange={e => setNewQuestion({...newQuestion, text: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm outline-none"></textarea>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" required placeholder="Opsi A" value={newQuestion.a} onChange={e => setNewQuestion({...newQuestion, a: e.target.value})} className="px-3 py-2 rounded-xl border text-sm" />
+                    <input type="text" required placeholder="Opsi B" value={newQuestion.b} onChange={e => setNewQuestion({...newQuestion, b: e.target.value})} className="px-3 py-2 rounded-xl border text-sm" />
+                    <input type="text" required placeholder="Opsi C" value={newQuestion.c} onChange={e => setNewQuestion({...newQuestion, c: e.target.value})} className="px-3 py-2 rounded-xl border text-sm" />
+                    <input type="text" required placeholder="Opsi D" value={newQuestion.d} onChange={e => setNewQuestion({...newQuestion, d: e.target.value})} className="px-3 py-2 rounded-xl border text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Kunci Jawaban (A/B/C/D)</label>
+                    <input type="text" maxLength={1} required value={newQuestion.ans} onChange={e => setNewQuestion({...newQuestion, ans: e.target.value.toUpperCase()})} className="w-20 px-3 py-2 rounded-xl border text-sm uppercase font-bold" />
+                  </div>
+                  <button type="submit" className="w-full bg-black text-white py-2 rounded-xl text-sm font-medium">Tambah Soal</button>
+                </form>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran</label>
-                  <input type="text" required value={newQuestion.subject} onChange={e => setNewQuestion({...newQuestion, subject: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm outline-none" />
+                  <h3 className="text-base font-bold text-slate-900 mb-2">Import Cepat Soal (JSON)</h3>
+                  <textarea rows={6} value={bulkJson} onChange={e => setBulkJson(e.target.value)} placeholder='[{"question":"2+2?", "options":["2","3","4","5"], "answer":"C", "subject":"Matematika"}]' className="w-full px-3 py-2 rounded-xl border text-xs font-mono outline-none"></textarea>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Pertanyaan</label>
-                  <textarea required rows={2} value={newQuestion.text} onChange={e => setNewQuestion({...newQuestion, text: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm outline-none"></textarea>
+                <div className="mt-4 space-y-2">
+                  <button onClick={() => {
+                    try {
+                      const parsed = JSON.parse(bulkJson);
+                      if (Array.isArray(parsed)) {
+                        const formatted = parsed.map((item: any) => ({
+                          id: Date.now() + Math.random(),
+                          subject: item.subject || 'Umum',
+                          text: item.question,
+                          options: item.options,
+                          answer: item.answer.toUpperCase()
+                        }));
+                        const updated = [...questions, ...formatted];
+                        setQuestions(updated);
+                        saveToStorage('cbt_questions', updated);
+                        setBulkJson('');
+                        alert(`${parsed.length} soal berhasil diimport!`);
+                      }
+                    } catch {
+                      alert('Format JSON salah!');
+                    }
+                  }} className="w-full bg-slate-900 text-white py-2.5 rounded-xl text-sm font-medium">Proses Import Cepat</button>
+                  <button onClick={() => {
+                    const sample = [
+                      { id: 1, subject: 'Matematika', text: 'Berapakah 12 x 8 - 15?', options: ['81', '71', '91', '61'], answer: 'A' },
+                      { id: 2, subject: 'Bahasa Indonesia', text: 'Sinonim "Cermat" adalah...', options: ['Ceroboh', 'Teliti', 'Cepat', 'Lambat'], answer: 'B' }
+                    ];
+                    setQuestions(sample);
+                    saveToStorage('cbt_questions', sample);
+                  }} className="w-full bg-slate-100 text-slate-700 py-2 rounded-xl text-xs font-medium">Muat Soal Contoh</button>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <input type="text" required placeholder="Opsi A" value={newQuestion.a} onChange={e => setNewQuestion({...newQuestion, a: e.target.value})} className="px-3 py-2 rounded-xl border text-sm" />
-                  <input type="text" required placeholder="Opsi B" value={newQuestion.b} onChange={e => setNewQuestion({...newQuestion, b: e.target.value})} className="px-3 py-2 rounded-xl border text-sm" />
-                  <input type="text" required placeholder="Opsi C" value={newQuestion.c} onChange={e => setNewQuestion({...newQuestion, c: e.target.value})} className="px-3 py-2 rounded-xl border text-sm" />
-                  <input type="text" required placeholder="Opsi D" value={newQuestion.d} onChange={e => setNewQuestion({...newQuestion, d: e.target.value})} className="px-3 py-2 rounded-xl border text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Kunci Jawaban (A/B/C/D)</label>
-                  <input type="text" maxLength={1} required value={newQuestion.ans} onChange={e => setNewQuestion({...newQuestion, ans: e.target.value.toUpperCase()})} className="w-20 px-3 py-2 rounded-xl border text-sm uppercase font-bold" />
-                </div>
-                <button type="submit" className="w-full bg-black text-white py-2 rounded-xl text-sm font-medium">Tambah Soal</button>
-              </form>
+              </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 mb-2">Import Cepat Soal (JSON)</h3>
-                <textarea rows={6} value={bulkJson} onChange={e => setBulkJson(e.target.value)} placeholder='[{"question":"2+2?", "options":["2","3","4","5"], "answer":"C", "subject":"Matematika"}]' className="w-full px-3 py-2 rounded-xl border text-xs font-mono outline-none"></textarea>
-              </div>
-              <div className="mt-4 space-y-2">
-                <button onClick={() => {
-                  try {
-                    const parsed = JSON.parse(bulkJson);
-                    if (Array.isArray(parsed)) {
-                      const formatted = parsed.map(item => ({
-                        id: Date.now() + Math.random(),
-                        subject: item.subject || 'Umum',
-                        text: item.question,
-                        options: item.options,
-                        answer: item.answer.toUpperCase()
-                      }));
-                      const updated = [...questions, ...formatted];
-                      setQuestions(updated);
-                      saveToStorage('cbt_questions', updated);
-                      setBulkJson('');
-                      alert(`${parsed.length} soal berhasil diimport!`);
-                    }
-                  } catch {
-                    alert('Format JSON salah!');
-                  }
-                }} className="w-full bg-slate-900 text-white py-2.5 rounded-xl text-sm font-medium">Proses Import Cepat</button>
-                <button onClick={() => {
-                  const sample = [
-                    { id: 1, subject: 'Matematika', text: 'Berapakah 12 x 8 - 15?', options: ['81', '71', '91', '61'], answer: 'A' },
-                    { id: 2, subject: 'Bahasa Indonesia', text: 'Sinonim "Cermat" adalah...', options: ['Ceroboh', 'Teliti', 'Cepat', 'Lambat'], answer: 'B' }
-                  ];
-                  setQuestions(sample);
-                  saveToStorage('cbt_questions', sample);
-                }} className="w-full bg-slate-100 text-slate-700 py-2 rounded-xl text-xs font-medium">Muat Soal Contoh</button>
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <h3 className="text-base font-bold text-slate-900 mb-4">Daftar Soal di Bank Soal</h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {questions.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-4">Belum ada soal di bank soal.</p>
+                ) : (
+                  questions.map((q: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex justify-between items-start gap-4">
+                      <div>
+                        <span className="text-xs font-bold bg-black text-white px-2 py-0.5 rounded">Soal #{idx + 1} ({q.subject})</span>
+                        <p className="text-sm font-medium text-slate-800 mt-2">{q.text}</p>
+                        <p className="text-xs text-slate-500 mt-1">Kunci Jawaban: <strong className="text-emerald-600">{q.answer}</strong></p>
+                      </div>
+                      <button onClick={() => deleteQuestion(idx)} className="text-rose-600 hover:underline text-xs whitespace-nowrap font-medium">Hapus</button>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB TOKEN & SETTINGS */}
         {adminTab === 'token' && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 max-w-lg">
             <h3 className="text-base font-bold text-slate-900 mb-4">Pengaturan Token & Keamanan</h3>
