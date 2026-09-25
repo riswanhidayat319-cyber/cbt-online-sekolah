@@ -1,4 +1,4 @@
-index.html soal bisa disimpan
+index.html FIX SOAL BUTTON
 
 <!DOCTYPE html>
 <html lang="id">
@@ -17,7 +17,7 @@ index.html soal bisa disimpan
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between" x-data="cbtApp()" x-init="initFirebase()">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between" x-data="cbtApp()" x-init="initApp()">
 
     <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -27,7 +27,7 @@ index.html soal bisa disimpan
                         <i class="fa-solid fa-graduation-cap"></i> CBT.EDU
                     </div>
                     <span class="bg-emerald-500/20 text-emerald-300 text-xs px-3 py-1 rounded-full font-medium border border-emerald-500/30 hidden sm:flex items-center">
-                        <i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-pulse"></i> Cloud Terhubung Real-Time + Anti-Cheat
+                        <i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-pulse"></i> Cloud Terhubung Real-Time
                     </span>
                 </div>
                 <div class="flex items-center space-x-4">
@@ -51,7 +51,7 @@ index.html soal bisa disimpan
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
                     <h2 class="text-2xl font-bold text-slate-900">Portal Ujian CBT</h2>
-                    <p class="text-sm text-slate-500 mt-1">SMP (7-9) & SMA/SMK (10-12) + Proteksi Anti-Curang</p>
+                    <p class="text-sm text-slate-500 mt-1">SMP (7-9) & SMA/SMK (10-12) + Anti-Curang</p>
                 </div>
 
                 <div class="flex rounded-xl bg-slate-100 p-1 mb-6">
@@ -91,7 +91,7 @@ index.html soal bisa disimpan
                         <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium transition text-sm shadow-md shadow-emerald-200">
                             Mulai Ujian Sekarang
                         </button>
-                        <div class="text-xs text-slate-400 text-center mt-2">Mode Anti-Cheat Aktif (Dilarang Pindah Tab)</div>
+                        <div class="text-xs text-slate-400 text-center mt-2">Mode Anti-Cheat Aktif</div>
                     </form>
                 </template>
             </div>
@@ -102,7 +102,7 @@ index.html soal bisa disimpan
             <div class="mb-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 class="text-2xl font-bold text-slate-900">Dasbor Pengawas & Admin</h1>
-                    <p class="text-sm text-slate-500">Kelola master data, bank soal, token ujian, tingkat kelas SMP/SMA/SMK, dan rekapitulasi nilai.</p>
+                    <p class="text-sm text-slate-500">Kelola master data, bank soal, token ujian, tingkat kelas SMP & SMA/SMK, serta rekapitulasi nilai.</p>
                 </div>
             </div>
 
@@ -118,7 +118,7 @@ index.html soal bisa disimpan
                     <i class="fa-solid fa-book-open mr-2"></i> Bank Soal
                 </button>
                 <button @click="adminTab = 'kelas'" :class="adminTab === 'kelas' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
-                    <i class="fa-solid fa-school mr-2"></i> Token & Kelas (SMP/SMA/SMK)
+                    <i class="fa-solid fa-school mr-2"></i> Token & Kelas (SMP & SMA/SMK)
                 </button>
                 <button @click="adminTab = 'setting'" :class="adminTab === 'setting' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
                     <i class="fa-solid fa-lock mr-2"></i> Otoritas Admin
@@ -129,14 +129,14 @@ index.html soal bisa disimpan
             <div x-show="adminTab === 'rekap'" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold text-slate-800">Hasil Rekapitulasi Nilai Siswa</h3>
-                    <button @click="fetchExamResults()" class="text-sm bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-slate-700 transition">
+                    <button @click="loadData()" class="text-sm bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-slate-700 transition">
                         <i class="fa-solid fa-rotate mr-1"></i> Perbarui Data
                     </button>
                 </div>
                 <template x-if="examResults.length === 0">
                     <div class="text-center py-16 text-slate-400 border-2 border-dashed rounded-2xl">
                         <i class="fa-solid fa-folder-open text-4xl mb-2"></i>
-                        <p class="font-medium">Belum ada data ujian yang masuk ke cloud.</p>
+                        <p class="font-medium">Belum ada data ujian yang masuk.</p>
                     </div>
                 </template>
                 <template x-if="examResults.length > 0">
@@ -148,6 +148,7 @@ index.html soal bisa disimpan
                                     <th class="p-3">Kelas</th>
                                     <th class="p-3">Mata Pelajaran</th>
                                     <th class="p-3">Nilai Akhir</th>
+                                    <th class="p-3">Pelanggaran</th>
                                     <th class="p-3">Waktu Selesai</th>
                                 </tr>
                             </thead>
@@ -158,6 +159,7 @@ index.html soal bisa disimpan
                                         <td class="p-3 text-slate-600" x-text="res.class"></td>
                                         <td class="p-3 text-slate-600" x-text="res.subject"></td>
                                         <td class="p-3"><span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-bold text-xs" x-text="res.score"></span></td>
+                                        <td class="p-3 text-amber-600 font-semibold" x-text="(res.violations || 0) + 'x'"></td>
                                         <td class="p-3 text-slate-500 text-xs" x-text="res.timestamp"></td>
                                     </tr>
                                 </template>
@@ -232,7 +234,7 @@ index.html soal bisa disimpan
 
             <!-- TAB 4: TOKEN, SESI & KELOLA KELAS -->
             <div x-show="adminTab === 'kelas'" class="space-y-6">
-                <!-- Tambah Kelas Baru (SMP / SMA / SMK) -->
+                <!-- Tambah Kelas Baru (SMP 7-9 & SMA/SMK 10-12) -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                     <h3 class="text-lg font-semibold mb-3 text-slate-800"><i class="fa-solid fa-school text-indigo-600 mr-2"></i>Kelola Tingkat & Daftar Kelas (SMP 7-9 & SMA/SMK 10-12)</h3>
                     <p class="text-sm text-slate-500 mb-4">Tambahkan kelas baru atau pilih dari daftar kelas yang tersedia untuk SMP, SMA, maupun SMK.</p>
@@ -274,11 +276,11 @@ index.html soal bisa disimpan
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Token Ujian (Bisa Diketik Manual)</label>
                                 <div class="flex gap-2">
-                                    <input type="text" x-model="examConfig.token" class="w-full px-3 py-2.5 border rounded-xl text-sm font-mono uppercase bg-white font-bold text-indigo-600" placeholder="Ketik token bebas atau generate">
+                                    <input type="text" x-model="examConfig.token" class="w-full px-3 py-2.5 border rounded-xl text-sm font-mono uppercase bg-white font-bold text-indigo-600" placeholder="Ketik token bebas">
                                     <button @click="generateToken()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm transition whitespace-nowrap">Acak Token</button>
                                 </div>
                             </div>
-                            <button @click="saveExamConfig()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium text-sm shadow-md shadow-emerald-200 transition">Simpan & Aktifkan Ujian di Cloud</button>
+                            <button @click="saveExamConfig()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium text-sm shadow-md shadow-emerald-200 transition">Simpan & Aktifkan Ujian</button>
                         </div>
                         <div class="border p-6 rounded-2xl bg-indigo-50/50 flex flex-col justify-between">
                             <div>
@@ -291,7 +293,7 @@ index.html soal bisa disimpan
                                 </div>
                             </div>
                             <div class="text-xs text-slate-500 mt-6 bg-white p-3 rounded-xl border">
-                                <i class="fa-solid fa-circle-info text-indigo-600 mr-1"></i> Siswa wajib memasukkan token di atas untuk dapat mengakses soal ujian. Anda dapat mengganti token kapan saja di samping.
+                                <i class="fa-solid fa-circle-info text-indigo-600 mr-1"></i> Siswa wajib memasukkan token di atas untuk dapat mengakses soal ujian.
                             </div>
                         </div>
                     </div>
@@ -301,17 +303,17 @@ index.html soal bisa disimpan
             <!-- TAB 5: OTORITAS ADMIN -->
             <div x-show="adminTab === 'setting'" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-xl">
                 <h3 class="text-lg font-semibold mb-4 text-slate-800">Pengaturan Otoritas Admin</h3>
-                <form @submit.prevent="updateAdminAccount" class="space-y-4">
+                <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Username Admin Baru</label>
-                        <input type="text" x-model="adminSettings.username" required class="w-full px-4 py-2.5 border rounded-xl text-sm">
+                        <input type="text" x-model="adminSettings.username" class="w-full px-4 py-2.5 border rounded-xl text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Password Baru</label>
-                        <input type="password" x-model="adminSettings.password" required class="w-full px-4 py-2.5 border rounded-xl text-sm" placeholder="Password baru">
+                        <input type="password" x-model="adminSettings.password" class="w-full px-4 py-2.5 border rounded-xl text-sm" placeholder="Password baru">
                     </div>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm shadow-md shadow-indigo-200 transition">Simpan Perubahan Admin</button>
-                </form>
+                    <button type="button" @click="updateAdminAccount()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm shadow-md shadow-indigo-200 transition">Simpan Perubahan Admin</button>
+                </div>
             </div>
         </div>
         </template>
@@ -348,7 +350,7 @@ index.html soal bisa disimpan
                         <template x-for="(q, idx) in questions" :key="q.id">
                             <div class="border p-6 rounded-2xl bg-slate-50/50">
                                 <div class="flex justify-between items-center mb-3">
-                                    <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md" x-text="'Soal No. ' + (idx + 1)"></span>
+                                    <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md" x-text="'Soal No. ' + (idx + 1) + ' (Mapel: ' + q.subject + ')'"></span>
                                 </div>
                                 <p class="font-medium text-slate-900 mb-4 text-base" x-text="q.question"></p>
                                 <div class="space-y-3 text-sm">
@@ -383,14 +385,14 @@ index.html soal bisa disimpan
         <div x-show="showStudentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
                 <h3 class="text-lg font-bold mb-4 text-slate-900">Tambah Data Siswa</h3>
-                <form @submit.prevent="saveStudent" class="space-y-4">
+                <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Nomor Induk Siswa (NIS)</label>
-                        <input type="text" x-model="newStudent.nis" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm">
+                        <input type="text" x-model="newStudent.nis" class="w-full px-3.5 py-2.5 border rounded-xl text-sm" placeholder="Contoh: 1001">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
-                        <input type="text" x-model="newStudent.name" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm">
+                        <input type="text" x-model="newStudent.name" class="w-full px-3.5 py-2.5 border rounded-xl text-sm" placeholder="Nama Siswa">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Kelas (SMP / SMA / SMK)</label>
@@ -402,9 +404,9 @@ index.html soal bisa disimpan
                     </div>
                     <div class="flex justify-end space-x-2 pt-2">
                         <button type="button" @click="showStudentModal = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Batal</button>
-                        <button type="submit" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">Simpan</button>
+                        <button type="button" @click="saveStudent()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">Simpan</button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -412,20 +414,20 @@ index.html soal bisa disimpan
         <div x-show="showQuestionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div class="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
                 <h3 class="text-lg font-bold mb-4 text-slate-900">Tambah Soal Baru</h3>
-                <form @submit.prevent="saveQuestion" class="space-y-4">
+                <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Mata Pelajaran</label>
-                        <input type="text" x-model="newQuestion.subject" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm" placeholder="Contoh: Matematika">
+                        <input type="text" x-model="newQuestion.subject" class="w-full px-3.5 py-2.5 border rounded-xl text-sm" placeholder="Contoh: Matematika Dasar">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Pertanyaan</label>
-                        <textarea x-model="newQuestion.question" rows="3" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm"></textarea>
+                        <textarea x-model="newQuestion.question" rows="3" class="w-full px-3.5 py-2.5 border rounded-xl text-sm" placeholder="Tulis pertanyaan soal di sini..."></textarea>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="text" x-model="newQuestion.optA" placeholder="Pilihan A" required class="px-3.5 py-2.5 border rounded-xl text-sm">
-                        <input type="text" x-model="newQuestion.optB" placeholder="Pilihan B" required class="px-3.5 py-2.5 border rounded-xl text-sm">
-                        <input type="text" x-model="newQuestion.optC" placeholder="Pilihan C" required class="px-3.5 py-2.5 border rounded-xl text-sm">
-                        <input type="text" x-model="newQuestion.optD" placeholder="Pilihan D" required class="px-3.5 py-2.5 border rounded-xl text-sm">
+                        <input type="text" x-model="newQuestion.optA" placeholder="Pilihan A" class="px-3.5 py-2.5 border rounded-xl text-sm">
+                        <input type="text" x-model="newQuestion.optB" placeholder="Pilihan B" class="px-3.5 py-2.5 border rounded-xl text-sm">
+                        <input type="text" x-model="newQuestion.optC" placeholder="Pilihan C" class="px-3.5 py-2.5 border rounded-xl text-sm">
+                        <input type="text" x-model="newQuestion.optD" placeholder="Pilihan D" class="px-3.5 py-2.5 border rounded-xl text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Kunci Jawaban Benar</label>
@@ -438,9 +440,9 @@ index.html soal bisa disimpan
                     </div>
                     <div class="flex justify-end space-x-2 pt-2">
                         <button type="button" @click="showQuestionModal = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Batal</button>
-                        <button type="submit" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">Simpan Soal</button>
+                        <button type="button" @click="saveQuestion()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">Simpan Soal</button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -455,9 +457,9 @@ index.html soal bisa disimpan
                 <p class="text-sm text-slate-600 mb-6" x-text="modal.message"></p>
                 <div class="flex gap-2 justify-center">
                     <template x-if="modal.isConfirm">
-                        <button @click="modal.show = false; if(modal.onCancel) modal.onCancel();" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Batal</button>
+                        <button type="button" @click="modal.show = false; if(modal.onCancel) modal.onCancel();" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Batal</button>
                     </template>
-                    <button @click="modal.show = false; if(modal.onConfirm) modal.onConfirm();" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">OK</button>
+                    <button type="button" @click="modal.show = false; if(modal.onConfirm) modal.onConfirm();" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">OK</button>
                 </div>
             </div>
         </div>
@@ -465,12 +467,12 @@ index.html soal bisa disimpan
     </main>
 
     <footer class="text-center py-6 text-sm text-slate-500 border-t bg-white mt-12">
-        &copy; 2026 CBT Online Platform. SMP (7-9) & SMA/SMK (10-12) Active Anti-Cheat System.
+        &copy; 2026 CBT Online Platform. SMP (7-9) & SMA/SMK (10-12) Anti-Cheat System.
     </footer>
 
     <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('cbtApp', () => ({
+        function cbtApp() {
+            return {
                 loginTab: 'admin',
                 currentUser: null,
                 adminTab: 'rekap',
@@ -491,9 +493,7 @@ index.html soal bisa disimpan
                 },
                 
                 classList: [
-                    '7A', '7B', '7C', 
-                    '8A', '8B', '8C', 
-                    '9A', '9B', '9C', 
+                    '7A', '7B', '7C', '8A', '8B', '8C', '9A', '9B', '9C', 
                     '10 MIPA 1', '10 MIPA 2', '10 IPS 1', 
                     '11 MIPA 1', '11 IPS 1', 
                     '12 MIPA 1', '12 IPS 1',
@@ -531,6 +531,58 @@ index.html soal bisa disimpan
                     this.modal = { show: true, title, message, type: 'info', isConfirm: true, onConfirm, onCancel };
                 },
 
+                initApp() {
+                    const savedStudents = localStorage.getItem('cbt_students');
+                    const savedQuestions = localStorage.getItem('cbt_questions');
+                    const savedResults = localStorage.getItem('cbt_results');
+                    const savedClasses = localStorage.getItem('cbt_classes');
+                    const savedConfig = localStorage.getItem('cbt_config');
+
+                    if (savedStudents) {
+                        this.students = JSON.parse(savedStudents);
+                    } else {
+                        this.students = [
+                            { id: '1', nis: '1001', name: 'Ahmad Fauzi', class: '7A' },
+                            { id: '2', nis: '1002', name: 'Siti Rahma', class: '10 MIPA 1' }
+                        ];
+                        localStorage.setItem('cbt_students', JSON.stringify(this.students));
+                    }
+
+                    if (savedQuestions) {
+                        this.questions = JSON.parse(savedQuestions);
+                    } else {
+                        this.questions = [
+                            { id: '1', subject: 'Matematika Dasar', question: 'Berapakah hasil dari 15 + 5 x 2?', optA: '40', optB: '25', optC: '30', optD: '20', correct: 'B' }
+                        ];
+                        localStorage.setItem('cbt_questions', JSON.stringify(this.questions));
+                    }
+
+                    if (savedResults) {
+                        this.examResults = JSON.parse(savedResults);
+                    }
+
+                    if (savedClasses) {
+                        this.classList = JSON.parse(savedClasses);
+                    }
+
+                    if (savedConfig) {
+                        this.examConfig = JSON.parse(savedConfig);
+                    }
+                },
+
+                saveData() {
+                    localStorage.setItem('cbt_students', JSON.stringify(this.students));
+                    localStorage.setItem('cbt_questions', JSON.stringify(this.questions));
+                    localStorage.setItem('cbt_results', JSON.stringify(this.examResults));
+                    localStorage.setItem('cbt_classes', JSON.stringify(this.classList));
+                    localStorage.setItem('cbt_config', JSON.stringify(this.examConfig));
+                },
+
+                loadData() {
+                    this.initApp();
+                    this.showAlert("Sukses", "Data berhasil diperbarui.", "success");
+                },
+
                 addNewClass() {
                     if(!this.newClassName.trim()) {
                         this.showAlert("Peringatan", "Nama kelas tidak boleh kosong!", "error");
@@ -543,81 +595,8 @@ index.html soal bisa disimpan
                     }
                     this.classList.push(formattedName);
                     this.newClassName = '';
+                    this.saveData();
                     this.showAlert("Sukses", "Kelas baru berhasil ditambahkan!", "success");
-                },
-
-                async initFirebase() {
-                    try {
-                        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-                        const { getAuth, signInAnonymously, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-                        const { getFirestore } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", projectId: "demo" };
-
-                        const app = initializeApp(firebaseConfig);
-                        window.db = getFirestore(app);
-                        window.auth = getAuth(app);
-
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(window.auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(window.auth);
-                        }
-
-                        this.setupRealtimeListeners();
-                    } catch (e) {
-                        console.error("Firebase init error:", e);
-                        this.loadLocalFallback();
-                    }
-                },
-
-                setupRealtimeListeners() {
-                    if (!window.db) return;
-                    
-                    import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js").then(({ collection, onSnapshot }) => {
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                        
-                        onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'), (snapshot) => {
-                            this.students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            if(this.students.length === 0) this.seedDefaultData();
-                        }, (err) => console.error(err));
-
-                        onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'), (snapshot) => {
-                            this.questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        }, (err) => console.error(err));
-
-                        onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'examResults'), (snapshot) => {
-                            this.examResults = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        }, (err) => console.error(err));
-                    });
-                },
-
-                async seedDefaultData() {
-                    try {
-                        const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                        
-                        const defaultStudent = { nis: '1001', name: 'Ahmad Fauzi', class: '7A' };
-                        const sRef = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'));
-                        await setDoc(sRef, defaultStudent);
-
-                        const defaultQ = { subject: 'Matematika Dasar', question: 'Berapakah hasil dari 15 + 5 x 2?', optA: '40', optB: '25', optC: '30', optD: '20', correct: 'B' };
-                        const qRef = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'));
-                        await setDoc(qRef, defaultQ);
-                    } catch (e) {
-                        console.error(e);
-                    }
-                },
-
-                loadLocalFallback() {
-                    this.students = [
-                        { id: '1', nis: '1001', name: 'Ahmad Fauzi', class: '7A' },
-                        { id: '2', nis: '1002', name: 'Siti Rahma', class: '10 MIPA 1' }
-                    ];
-                    this.questions = [
-                        { id: '1', subject: 'Matematika Dasar', question: 'Berapakah hasil dari 15 + 5 x 2?', optA: '40', optB: '25', optC: '30', optD: '20', correct: 'B' }
-                    ];
                 },
 
                 adminLogin() {
@@ -641,7 +620,7 @@ index.html soal bisa disimpan
                     }
                     this.currentUser = { role: 'Student', name: found.name, class: found.class, nis: found.nis };
                     this.studentAnswers = {};
-                    this.timerRemaining = (this.examConfig.duration || 60) * 60;
+                    this.timerRemaining = (parseInt(this.examConfig.duration) || 60) * 60;
                     this.violationCount = 0;
                     this.startTimer();
                     this.initAntiCheat();
@@ -654,7 +633,7 @@ index.html soal bisa disimpan
                             this.timerRemaining--;
                         } else {
                             clearInterval(this.timerInterval);
-                            this.showAlert("Waktu Habis", "Waktu ujian telah habis. Jawaban akan dikirim otomatis.", "error");
+                            this.showAlert("Waktu Habis", "Waktu ujian telah habis. Jawaban dikirim otomatis.", "error");
                             this.submitExam();
                         }
                     }, 1000);
@@ -670,7 +649,7 @@ index.html soal bisa disimpan
                         if (this.currentUser && this.currentUser.role === 'Student') {
                             this.violationCount++;
                             if (this.violationCount >= 3) {
-                                this.showAlert("Diskualifikasi", "Anda telah melakukan pelanggaran anti-cheat sebanyak 3 kali. Ujian otomatis dikirim!", "error");
+                                this.showAlert("Diskualifikasi", "Anda telah melanggar aturan anti-cheat 3 kali. Ujian dikirim otomatis!", "error");
                                 this.submitExam();
                             } else {
                                 this.showAlert("Peringatan Anti-Cheat!", `Anda terdeteksi keluar dari halaman ujian! Pelanggaran ke-${this.violationCount} dari 3.`, "error");
@@ -699,48 +678,23 @@ index.html soal bisa disimpan
                     this.showStudentModal = true;
                 },
 
-                async saveStudent() {
-                    try {
-                        const studentData = { id: Date.now().toString(), ...this.newStudent };
-                        if(window.db) {
-                            try {
-                                const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                                const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'), studentData.id);
-                                await setDoc(ref, this.newStudent);
-                            } catch (fbErr) {
-                                console.warn("Firebase student save failed, using local:", fbErr);
-                                this.students.push(studentData);
-                            }
-                        } else {
-                            this.students.push(studentData);
-                        }
-                        this.showStudentModal = false;
-                        this.showAlert("Sukses", "Data siswa berhasil ditambahkan!", "success");
-                    } catch(e) {
-                        console.error("Save student error:", e);
-                        this.showAlert("Error", "Gagal menyimpan data siswa.", "error");
+                saveStudent() {
+                    if(!this.newStudent.nis || !this.newStudent.name) {
+                        this.showAlert("Peringatan", "NIS dan Nama Lengkap wajib diisi!", "error");
+                        return;
                     }
+                    const studentData = { id: Date.now().toString(), ...this.newStudent };
+                    this.students.push(studentData);
+                    this.saveData();
+                    this.showStudentModal = false;
+                    this.showAlert("Sukses", "Data siswa berhasil ditambahkan!", "success");
                 },
 
                 deleteStudent(id) {
-                    this.showConfirm("Hapus Siswa", "Apakah Anda yakin ingin menghapus data siswa ini?", async () => {
-                        try {
-                            if(window.db) {
-                                try {
-                                    const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                                    await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'students', id));
-                                } catch (fbErr) {
-                                    console.warn("Firebase delete student failed, using local:", fbErr);
-                                }
-                            }
-                            this.students = this.students.filter(s => s.id !== id);
-                            this.showAlert("Sukses", "Siswa berhasil dihapus.", "success");
-                        } catch(e) {
-                            console.error("Delete student error:", e);
-                            this.showAlert("Error", "Gagal menghapus siswa.", "error");
-                        }
+                    this.showConfirm("Hapus Siswa", "Apakah Anda yakin ingin menghapus data siswa ini?", () => {
+                        this.students = this.students.filter(s => s.id !== id);
+                        this.saveData();
+                        this.showAlert("Sukses", "Siswa berhasil dihapus.", "success");
                     });
                 },
 
@@ -749,48 +703,23 @@ index.html soal bisa disimpan
                     this.showQuestionModal = true;
                 },
 
-                async saveQuestion() {
-                    try {
-                        const questionData = { id: Date.now().toString(), ...this.newQuestion };
-                        if(window.db) {
-                            try {
-                                const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                                const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'), questionData.id);
-                                await setDoc(ref, this.newQuestion);
-                            } catch (fbErr) {
-                                console.warn("Firebase question save failed, falling back to local:", fbErr);
-                                this.questions.push(questionData);
-                            }
-                        } else {
-                            this.questions.push(questionData);
-                        }
-                        this.showQuestionModal = false;
-                        this.showAlert("Sukses", "Soal baru berhasil ditambahkan ke bank soal!", "success");
-                    } catch(e) {
-                        console.error("Save question error:", e);
-                        this.showAlert("Error", "Gagal menyimpan soal.", "error");
+                saveQuestion() {
+                    if(!this.newQuestion.question || !this.newQuestion.optA || !this.newQuestion.optB) {
+                        this.showAlert("Peringatan", "Pertanyaan dan pilihan jawaban wajib diisi!", "error");
+                        return;
                     }
+                    const questionData = { id: Date.now().toString(), ...this.newQuestion };
+                    this.questions.push(questionData);
+                    this.saveData();
+                    this.showQuestionModal = false;
+                    this.showAlert("Sukses", "Soal baru berhasil ditambahkan ke bank soal!", "success");
                 },
 
                 deleteQuestion(id) {
-                    this.showConfirm("Hapus Soal", "Apakah Anda yakin ingin menghapus soal ini?", async () => {
-                        try {
-                            if(window.db) {
-                                try {
-                                    const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                                    await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'questions', id));
-                                } catch (fbErr) {
-                                    console.warn("Firebase delete question failed, using local:", fbErr);
-                                }
-                            }
-                            this.questions = this.questions.filter(q => q.id !== id);
-                            this.showAlert("Sukses", "Soal berhasil dihapus.", "success");
-                        } catch(e) {
-                            console.error("Delete question error:", e);
-                            this.showAlert("Error", "Gagal menghapus soal.", "error");
-                        }
+                    this.showConfirm("Hapus Soal", "Apakah Anda yakin ingin menghapus soal ini?", () => {
+                        this.questions = this.questions.filter(q => q.id !== id);
+                        this.saveData();
+                        this.showAlert("Sukses", "Soal berhasil dihapus.", "success");
                     });
                 },
 
@@ -804,10 +733,15 @@ index.html soal bisa disimpan
                 },
 
                 saveExamConfig() {
+                    this.saveData();
                     this.showAlert("Sesi Diaktifkan", "Token ujian aktif berhasil diperbarui ke: " + this.examConfig.token, "success");
                 },
 
                 updateAdminAccount() {
+                    if(!this.adminSettings.username || !this.adminSettings.password) {
+                        this.showAlert("Peringatan", "Username dan Password baru tidak boleh kosong!", "error");
+                        return;
+                    }
                     this.adminCredentials.username = this.adminSettings.username;
                     this.adminCredentials.password = this.adminSettings.password;
                     this.showAlert("Sukses", "Otoritas admin berhasil diperbarui!", "success");
@@ -819,7 +753,7 @@ index.html soal bisa disimpan
                     });
                 },
 
-                async submitExam() {
+                submitExam() {
                     if(this.timerInterval) clearInterval(this.timerInterval);
                     if(this.antiCheatListener) window.removeEventListener('blur', this.antiCheatListener);
 
@@ -832,6 +766,7 @@ index.html soal bisa disimpan
                     const finalScore = this.questions.length > 0 ? Math.round((correctCount / this.questions.length) * 100) : 0;
                     
                     const resultEntry = {
+                        id: Date.now().toString(),
                         name: this.currentUser.name,
                         class: this.currentUser.class,
                         subject: this.examConfig.subject,
@@ -840,24 +775,14 @@ index.html soal bisa disimpan
                         timestamp: new Date().toLocaleString()
                     };
 
-                    try {
-                        if(window.db) {
-                            const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                            const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'examResults'));
-                            await setDoc(ref, resultEntry);
-                        } else {
-                            this.examResults.push({ id: Date.now().toString(), ...resultEntry });
-                        }
-                    } catch(e) {
-                        console.error(e);
-                    }
+                    this.examResults.push(resultEntry);
+                    this.saveData();
 
                     this.showAlert("Ujian Selesai", "Nilai Akhir Anda: " + finalScore, "success");
                     this.logout();
                 }
-            }));
-        });
+            }
+        }
     </script>
 </body>
 </html>
