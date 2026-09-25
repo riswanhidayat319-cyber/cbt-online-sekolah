@@ -1,5 +1,4 @@
 index.html
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -8,8 +7,6 @@ index.html
     <title>CBT.EDU System - Platform Ujian Online Terpadu</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js CDN -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -414,7 +411,7 @@ index.html
             </div>
         </div>
 
-        <!-- CUSTOM MESSAGE / NOTIFICATION MODAL (NO ALERT/CONFIRM) -->
+        <!-- CUSTOM MESSAGE / NOTIFICATION MODAL -->
         <div x-show="modal.show" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
                 <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl"
@@ -438,16 +435,10 @@ index.html
         &copy; 2026 CBT Online Platform. Real-Time Cloud Safe Mode Active.
     </footer>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", projectId: "demo" };
-
-        window.cbtApp = function() {
-            return {
+    <!-- Alpine.js Initialization Fix for Modules -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('cbtApp', () => ({
                 loginTab: 'admin',
                 currentUser: null,
                 adminTab: 'rekap',
@@ -499,6 +490,13 @@ index.html
 
                 async initFirebase() {
                     try {
+                        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+                        const { getAuth, signInAnonymously, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+                        const { getFirestore } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", projectId: "demo" };
+
                         const app = initializeApp(firebaseConfig);
                         window.db = getFirestore(app);
                         window.auth = getAuth(app);
@@ -520,25 +518,29 @@ index.html
                 setupRealtimeListeners() {
                     if (!window.db) return;
                     
-                    // Students listener
-                    onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'), (snapshot) => {
-                        this.students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        if(this.students.length === 0) this.seedDefaultData();
-                    }, (err) => console.error(err));
+                    import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js").then(({ collection, onSnapshot }) => {
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                        
+                        onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'), (snapshot) => {
+                            this.students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            if(this.students.length === 0) this.seedDefaultData();
+                        }, (err) => console.error(err));
 
-                    // Questions listener
-                    onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'), (snapshot) => {
-                        this.questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    }, (err) => console.error(err));
+                        onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'), (snapshot) => {
+                            this.questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        }, (err) => console.error(err));
 
-                    // Results listener
-                    onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'examResults'), (snapshot) => {
-                        this.examResults = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    }, (err) => console.error(err));
+                        onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'examResults'), (snapshot) => {
+                            this.examResults = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        }, (err) => console.error(err));
+                    });
                 },
 
                 async seedDefaultData() {
                     try {
+                        const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                        
                         const defaultStudent = { nis: '1001', name: 'Ahmad Fauzi', class: '7A' };
                         const sRef = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'));
                         await setDoc(sRef, defaultStudent);
@@ -620,6 +622,8 @@ index.html
                 async saveStudent() {
                     try {
                         if(window.db) {
+                            const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
                             const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'));
                             await setDoc(ref, this.newStudent);
                         } else {
@@ -636,6 +640,8 @@ index.html
                     this.showConfirm("Hapus Siswa", "Apakah Anda yakin ingin menghapus data siswa ini?", async () => {
                         try {
                             if(window.db) {
+                                const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
                                 await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'students', id));
                             } else {
                                 this.students = this.students.filter(s => s.id !== id);
@@ -655,6 +661,8 @@ index.html
                 async saveQuestion() {
                     try {
                         if(window.db) {
+                            const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
                             const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'));
                             await setDoc(ref, this.newQuestion);
                         } else {
@@ -671,6 +679,8 @@ index.html
                     this.showConfirm("Hapus Soal", "Apakah Anda yakin ingin menghapus soal ini?", async () => {
                         try {
                             if(window.db) {
+                                const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
                                 await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'questions', id));
                             } else {
                                 this.questions = this.questions.filter(q => q.id !== id);
@@ -727,6 +737,8 @@ index.html
 
                     try {
                         if(window.db) {
+                            const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
                             const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'examResults'));
                             await setDoc(ref, resultEntry);
                         } else {
@@ -739,8 +751,10 @@ index.html
                     this.showAlert("Ujian Selesai", "Nilai Akhir Anda: " + finalScore, "success");
                     this.logout();
                 }
-            }
-        }
+            }));
+        });
     </script>
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>
