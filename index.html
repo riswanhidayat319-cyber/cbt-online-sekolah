@@ -1,4 +1,4 @@
-index.html ANTI CURANG
+index.html soal bisa disimpan
 
 <!DOCTYPE html>
 <html lang="id">
@@ -661,11 +661,9 @@ index.html ANTI CURANG
                 },
 
                 initAntiCheat() {
-                    // Blokir klik kanan & copy-paste
                     document.addEventListener('contextmenu', e => e.preventDefault());
                     document.addEventListener('copy', e => e.preventDefault());
 
-                    // Deteksi pindah tab / minimize window
                     if(this.antiCheatListener) window.removeEventListener('blur', this.antiCheatListener);
                     
                     this.antiCheatListener = () => {
@@ -703,17 +701,24 @@ index.html ANTI CURANG
 
                 async saveStudent() {
                     try {
+                        const studentData = { id: Date.now().toString(), ...this.newStudent };
                         if(window.db) {
-                            const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                            const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'));
-                            await setDoc(ref, this.newStudent);
+                            try {
+                                const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                                const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'), studentData.id);
+                                await setDoc(ref, this.newStudent);
+                            } catch (fbErr) {
+                                console.warn("Firebase student save failed, using local:", fbErr);
+                                this.students.push(studentData);
+                            }
                         } else {
-                            this.students.push({ id: Date.now().toString(), ...this.newStudent });
+                            this.students.push(studentData);
                         }
                         this.showStudentModal = false;
                         this.showAlert("Sukses", "Data siswa berhasil ditambahkan!", "success");
                     } catch(e) {
+                        console.error("Save student error:", e);
                         this.showAlert("Error", "Gagal menyimpan data siswa.", "error");
                     }
                 },
@@ -722,14 +727,18 @@ index.html ANTI CURANG
                     this.showConfirm("Hapus Siswa", "Apakah Anda yakin ingin menghapus data siswa ini?", async () => {
                         try {
                             if(window.db) {
-                                const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                                await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'students', id));
-                            } else {
-                                this.students = this.students.filter(s => s.id !== id);
+                                try {
+                                    const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                                    await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'students', id));
+                                } catch (fbErr) {
+                                    console.warn("Firebase delete student failed, using local:", fbErr);
+                                }
                             }
+                            this.students = this.students.filter(s => s.id !== id);
                             this.showAlert("Sukses", "Siswa berhasil dihapus.", "success");
                         } catch(e) {
+                            console.error("Delete student error:", e);
                             this.showAlert("Error", "Gagal menghapus siswa.", "error");
                         }
                     });
@@ -742,17 +751,24 @@ index.html ANTI CURANG
 
                 async saveQuestion() {
                     try {
+                        const questionData = { id: Date.now().toString(), ...this.newQuestion };
                         if(window.db) {
-                            const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                            const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'));
-                            await setDoc(ref, this.newQuestion);
+                            try {
+                                const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                                const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'), questionData.id);
+                                await setDoc(ref, this.newQuestion);
+                            } catch (fbErr) {
+                                console.warn("Firebase question save failed, falling back to local:", fbErr);
+                                this.questions.push(questionData);
+                            }
                         } else {
-                            this.questions.push({ id: Date.now().toString(), ...this.newQuestion });
+                            this.questions.push(questionData);
                         }
                         this.showQuestionModal = false;
                         this.showAlert("Sukses", "Soal baru berhasil ditambahkan ke bank soal!", "success");
                     } catch(e) {
+                        console.error("Save question error:", e);
                         this.showAlert("Error", "Gagal menyimpan soal.", "error");
                     }
                 },
@@ -761,14 +777,18 @@ index.html ANTI CURANG
                     this.showConfirm("Hapus Soal", "Apakah Anda yakin ingin menghapus soal ini?", async () => {
                         try {
                             if(window.db) {
-                                const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                                await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'questions', id));
-                            } else {
-                                this.questions = this.questions.filter(q => q.id !== id);
+                                try {
+                                    const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                                    await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'questions', id));
+                                } catch (fbErr) {
+                                    console.warn("Firebase delete question failed, using local:", fbErr);
+                                }
                             }
+                            this.questions = this.questions.filter(q => q.id !== id);
                             this.showAlert("Sukses", "Soal berhasil dihapus.", "success");
                         } catch(e) {
+                            console.error("Delete question error:", e);
                             this.showAlert("Error", "Gagal menghapus soal.", "error");
                         }
                     });
