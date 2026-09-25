@@ -1,4 +1,4 @@
-index.html FOX
+index.html ANTI CURANG
 
 <!DOCTYPE html>
 <html lang="id">
@@ -27,7 +27,7 @@ index.html FOX
                         <i class="fa-solid fa-graduation-cap"></i> CBT.EDU
                     </div>
                     <span class="bg-emerald-500/20 text-emerald-300 text-xs px-3 py-1 rounded-full font-medium border border-emerald-500/30 hidden sm:flex items-center">
-                        <i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-pulse"></i> Terhubung Cloud (Vercel Ready)
+                        <i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-pulse"></i> Cloud Terhubung Real-Time + Anti-Cheat
                     </span>
                 </div>
                 <div class="flex items-center space-x-4">
@@ -44,7 +44,6 @@ index.html FOX
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
 
-        <!-- LOGIN / AUTH SCREEN -->
         <template x-if="!currentUser">
             <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-slate-100 p-8 mt-6">
                 <div class="text-center mb-6">
@@ -52,7 +51,7 @@ index.html FOX
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
                     <h2 class="text-2xl font-bold text-slate-900">Portal Ujian CBT</h2>
-                    <p class="text-sm text-slate-500 mt-1">SMP (7-9) & SMA/SMK (10-12) Active System</p>
+                    <p class="text-sm text-slate-500 mt-1">SMP (7-9) & SMA/SMK (10-12) + Proteksi Anti-Curang</p>
                 </div>
 
                 <div class="flex rounded-xl bg-slate-100 p-1 mb-6">
@@ -92,7 +91,7 @@ index.html FOX
                         <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium transition text-sm shadow-md shadow-emerald-200">
                             Mulai Ujian Sekarang
                         </button>
-                        <div class="text-xs text-slate-400 text-center mt-2">Cek token aktif di pengawas sekolah</div>
+                        <div class="text-xs text-slate-400 text-center mt-2">Mode Anti-Cheat Aktif (Dilarang Pindah Tab)</div>
                     </form>
                 </template>
             </div>
@@ -319,6 +318,15 @@ index.html FOX
 
         <template x-if="currentUser && currentUser.role === 'Student'">
             <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border p-6 md:p-8">
+                <!-- Anti-cheat violation notification banner -->
+                <div class="mb-4 bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between text-amber-800 text-sm">
+                    <div class="flex items-center gap-2 font-medium">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg"></i>
+                        <span>Mode Anti-Cheat Aktif: Dilarang pindah tab/window atau membuka aplikasi lain!</span>
+                    </div>
+                    <span class="bg-amber-200 text-amber-900 px-2.5 py-1 rounded-lg font-bold text-xs" x-text="'Pelanggaran: ' + violationCount + '/3'"></span>
+                </div>
+
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 mb-6 gap-4">
                     <div>
                         <h2 class="text-xl font-bold text-slate-900" x-text="'Ujian: ' + examConfig.subject"></h2>
@@ -457,10 +465,9 @@ index.html FOX
     </main>
 
     <footer class="text-center py-6 text-sm text-slate-500 border-t bg-white mt-12">
-        &copy; 2026 CBT Online Platform. SMP (7-9) & SMA/SMK (10-12) Active.
+        &copy; 2026 CBT Online Platform. SMP (7-9) & SMA/SMK (10-12) Active Anti-Cheat System.
     </footer>
 
-    <!-- Alpine.js Initialization -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('cbtApp', () => ({
@@ -503,6 +510,8 @@ index.html FOX
                 studentAnswers: {},
                 timerRemaining: 3600,
                 timerInterval: null,
+                violationCount: 0,
+                antiCheatListener: null,
 
                 modal: {
                     show: false,
@@ -633,7 +642,9 @@ index.html FOX
                     this.currentUser = { role: 'Student', name: found.name, class: found.class, nis: found.nis };
                     this.studentAnswers = {};
                     this.timerRemaining = (this.examConfig.duration || 60) * 60;
+                    this.violationCount = 0;
                     this.startTimer();
+                    this.initAntiCheat();
                 },
 
                 startTimer() {
@@ -649,6 +660,28 @@ index.html FOX
                     }, 1000);
                 },
 
+                initAntiCheat() {
+                    // Blokir klik kanan & copy-paste
+                    document.addEventListener('contextmenu', e => e.preventDefault());
+                    document.addEventListener('copy', e => e.preventDefault());
+
+                    // Deteksi pindah tab / minimize window
+                    if(this.antiCheatListener) window.removeEventListener('blur', this.antiCheatListener);
+                    
+                    this.antiCheatListener = () => {
+                        if (this.currentUser && this.currentUser.role === 'Student') {
+                            this.violationCount++;
+                            if (this.violationCount >= 3) {
+                                this.showAlert("Diskualifikasi", "Anda telah melakukan pelanggaran anti-cheat sebanyak 3 kali. Ujian otomatis dikirim!", "error");
+                                this.submitExam();
+                            } else {
+                                this.showAlert("Peringatan Anti-Cheat!", `Anda terdeteksi keluar dari halaman ujian! Pelanggaran ke-${this.violationCount} dari 3.`, "error");
+                            }
+                        }
+                    };
+                    window.addEventListener('blur', this.antiCheatListener);
+                },
+
                 formatTime(seconds) {
                     const m = Math.floor(seconds / 60);
                     const s = seconds % 60;
@@ -657,6 +690,7 @@ index.html FOX
 
                 logout() {
                     if(this.timerInterval) clearInterval(this.timerInterval);
+                    if(this.antiCheatListener) window.removeEventListener('blur', this.antiCheatListener);
                     this.currentUser = null;
                     this.adminForm = { username: '', password: '' };
                     this.studentForm = { nis: '', token: '' };
@@ -767,6 +801,8 @@ index.html FOX
 
                 async submitExam() {
                     if(this.timerInterval) clearInterval(this.timerInterval);
+                    if(this.antiCheatListener) window.removeEventListener('blur', this.antiCheatListener);
+
                     let correctCount = 0;
                     this.questions.forEach((q, idx) => {
                         if(this.studentAnswers[idx] && this.studentAnswers[idx] === q.correct) {
@@ -780,6 +816,7 @@ index.html FOX
                         class: this.currentUser.class,
                         subject: this.examConfig.subject,
                         score: finalScore,
+                        violations: this.violationCount,
                         timestamp: new Date().toLocaleString()
                     };
 
