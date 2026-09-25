@@ -1,786 +1,806 @@
+index.html FOX
 
-NEW
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT.EDU System - Platform Ujian Online Terpadu</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between" x-data="cbtApp()" x-init="initFirebase()">
 
-<nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16 items-center">
-            <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 text-white p-2 rounded-xl font-bold text-lg shadow-inner flex items-center gap-2">
-                    <i class="fa-solid fa-graduation-cap"></i> CBT.EDU
+    <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-600 text-white p-2 rounded-xl font-bold text-lg shadow-inner flex items-center gap-2">
+                        <i class="fa-solid fa-graduation-cap"></i> CBT.EDU
+                    </div>
+                    <span class="bg-emerald-500/20 text-emerald-300 text-xs px-3 py-1 rounded-full font-medium border border-emerald-500/30 hidden sm:flex items-center">
+                        <i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-pulse"></i> Terhubung Cloud (Vercel Ready)
+                    </span>
                 </div>
-                <span class="bg-emerald-500/20 text-emerald-300 text-xs px-3 py-1 rounded-full font-medium border border-emerald-500/30 flex items-center">
-                    <i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-pulse"></i> Terhubung Cloud (Vercel Ready)
-                </span>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-slate-300 hidden sm:inline" x-text="currentUser ? 'Login as: ' + currentUser.role + ' (' + (currentUser.name || currentUser.username) + ')' : 'Guest'"></span>
+                    <template x-if="currentUser">
+                        <button @click="logout()" class="bg-red-600/80 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-1">
+                            <i class="fa-solid fa-right-from-bracket mr-1"></i> Keluar
+                        </button>
+                    </template>
+                </div>
             </div>
-            <div class="flex items-center space-x-4">
-                <span class="text-sm text-slate-300 hidden sm:inline" x-text="currentUser ? 'Login as: ' + currentUser.role + ' (' + (currentUser.name || currentUser.username) + ')' : 'Guest'"></span>
-                <template x-if="currentUser">
-                    <button @click="logout()" class="bg-red-600/80 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-1">
-                        <i class="fa-solid fa-right-from-bracket mr-1"></i> Keluar
-                    </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+
+        <!-- LOGIN / AUTH SCREEN -->
+        <template x-if="!currentUser">
+            <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-slate-100 p-8 mt-6">
+                <div class="text-center mb-6">
+                    <div class="inline-flex bg-indigo-50 text-indigo-600 p-3 rounded-2xl mb-3 text-2xl shadow-sm">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900">Portal Ujian CBT</h2>
+                    <p class="text-sm text-slate-500 mt-1">SMP (7-9) & SMA/SMK (10-12) Active System</p>
+                </div>
+
+                <div class="flex rounded-xl bg-slate-100 p-1 mb-6">
+                    <button @click="loginTab = 'admin'" :class="loginTab === 'admin' ? 'bg-white shadow text-indigo-600 font-semibold' : 'text-slate-600'" class="flex-1 py-2.5 rounded-lg text-sm transition">Admin / Pengawas</button>
+                    <button @click="loginTab = 'student'" :class="loginTab === 'student' ? 'bg-white shadow text-indigo-600 font-semibold' : 'text-slate-600'" class="flex-1 py-2.5 rounded-lg text-sm transition">Siswa</button>
+                </div>
+
+                <!-- Admin Login Form -->
+                <template x-if="loginTab === 'admin'">
+                    <form @submit.prevent="adminLogin" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Username Admin</label>
+                            <input type="text" x-model="adminForm.username" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                            <input type="password" x-model="adminForm.password" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-medium transition text-sm shadow-md shadow-indigo-200">
+                            Masuk Dasbor Admin
+                        </button>
+                        <div class="text-xs text-slate-400 text-center mt-2">Default: Administrator / password123</div>
+                    </form>
+                </template>
+
+                <!-- Student Login Form -->
+                <template x-if="loginTab === 'student'">
+                    <form @submit.prevent="studentLogin" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Nomor Induk Siswa (NIS)</label>
+                            <input type="text" x-model="studentForm.nis" placeholder="Contoh: 1001" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Token Ujian Aktif</label>
+                            <input type="text" x-model="studentForm.token" placeholder="Masukkan token aktif" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm uppercase tracking-widest font-mono">
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium transition text-sm shadow-md shadow-emerald-200">
+                            Mulai Ujian Sekarang
+                        </button>
+                        <div class="text-xs text-slate-400 text-center mt-2">Cek token aktif di pengawas sekolah</div>
+                    </form>
                 </template>
             </div>
-        </div>
-    </div>
-</nav>
+        </template>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
-
-    <!-- LOGIN / AUTH SCREEN -->
-    <template x-if="!currentUser">
-        <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-slate-100 p-8 mt-6">
-            <div class="text-center mb-6">
-                <div class="inline-flex bg-indigo-50 text-indigo-600 p-3 rounded-2xl mb-3 text-2xl shadow-sm">
-                    <i class="fa-solid fa-shield-halved"></i>
+        <template x-if="currentUser && currentUser.role === 'Administrator'">
+        <div>
+            <div class="mb-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Dasbor Pengawas & Admin</h1>
+                    <p class="text-sm text-slate-500">Kelola master data, bank soal, token ujian, tingkat kelas SMP/SMA/SMK, dan rekapitulasi nilai.</p>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-900">Portal Ujian CBT</h2>
-                <p class="text-sm text-slate-500 mt-1">Silakan masuk sesuai hak akses Anda</p>
             </div>
 
-            <div class="flex rounded-xl bg-slate-100 p-1 mb-6">
-                <button @click="loginTab = 'admin'" :class="loginTab === 'admin' ? 'bg-white shadow text-indigo-600 font-semibold' : 'text-slate-600'" class="flex-1 py-2.5 rounded-lg text-sm transition">Admin / Pengawas</button>
-                <button @click="loginTab = 'student'" :class="loginTab === 'student' ? 'bg-white shadow text-indigo-600 font-semibold' : 'text-slate-600'" class="flex-1 py-2.5 rounded-lg text-sm transition">Siswa</button>
-            </div>
-
-            <!-- Admin Login Form -->
-            <template x-if="loginTab === 'admin'">
-                <form @submit.prevent="adminLogin" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Username Admin</label>
-                        <input type="text" x-model="adminForm.username" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                        <input type="password" x-model="adminForm.password" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-medium transition text-sm shadow-md shadow-indigo-200">
-                        Masuk Dasbor Admin
-                    </button>
-                    <div class="text-xs text-slate-400 text-center mt-2">Default: Administrator / password123</div>
-                </form>
-            </template>
-
-            <!-- Student Login Form -->
-            <template x-if="loginTab === 'student'">
-                <form @submit.prevent="studentLogin" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Nomor Induk Siswa (NIS)</label>
-                        <input type="text" x-model="studentForm.nis" placeholder="Contoh: 1001" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Token Ujian Aktif</label>
-                        <input type="text" x-model="studentForm.token" placeholder="Masukkan token aktif" required class="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm uppercase tracking-widest font-mono">
-                    </div>
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium transition text-sm shadow-md shadow-emerald-200">
-                        Mulai Ujian Sekarang
-                    </button>
-                    <div class="text-xs text-slate-400 text-center mt-2">Contoh NIS: 1001 | Cek token di pengawas</div>
-                </form>
-            </template>
-        </div>
-    </template>
-
-    <template x-if="currentUser && currentUser.role === 'Administrator'">
-    <div>
-        <div class="mb-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-900">Dasbor Pengawas & Admin</h1>
-                <p class="text-sm text-slate-500">Kelola master data, bank soal, token ujian, tingkat kelas SMP/SMA/SMK, dan rekapitulasi nilai.</p>
-            </div>
-        </div>
-
-        <!-- Admin Navigation Tabs -->
-        <div class="flex flex-wrap gap-2 mb-6 border-b pb-3">
-            <button @click="adminTab = 'rekap'" :class="adminTab === 'rekap' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
-                <i class="fa-solid fa-chart-pie mr-2"></i> Rekapitulasi Nilai
-            </button>
-            <button @click="adminTab = 'siswa'" :class="adminTab === 'siswa' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
-                <i class="fa-solid fa-users mr-2"></i> Master Data Siswa
-            </button>
-            <button @click="adminTab = 'soal'" :class="adminTab === 'soal' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
-                <i class="fa-solid fa-book-open mr-2"></i> Bank Soal
-            </button>
-            <button @click="adminTab = 'kelas'" :class="adminTab === 'kelas' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
-                <i class="fa-solid fa-school mr-2"></i> Token & Kelas (SMP/SMA/SMK)
-            </button>
-            <button @click="adminTab = 'setting'" :class="adminTab === 'setting' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
-                <i class="fa-solid fa-lock mr-2"></i> Otoritas Admin
-            </button>
-        </div>
-
-        <!-- TAB 1: REKAPITULASI NILAI -->
-        <div x-show="adminTab === 'rekap'" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-slate-800">Hasil Rekapitulasi Nilai Siswa</h3>
-                <button @click="fetchExamResults()" class="text-sm bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-slate-700 transition">
-                    <i class="fa-solid fa-rotate mr-1"></i> Perbarui Data
+            <!-- Admin Navigation Tabs -->
+            <div class="flex flex-wrap gap-2 mb-6 border-b pb-3">
+                <button @click="adminTab = 'rekap'" :class="adminTab === 'rekap' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
+                    <i class="fa-solid fa-chart-pie mr-2"></i> Rekapitulasi Nilai
+                </button>
+                <button @click="adminTab = 'siswa'" :class="adminTab === 'siswa' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
+                    <i class="fa-solid fa-users mr-2"></i> Master Data Siswa
+                </button>
+                <button @click="adminTab = 'soal'" :class="adminTab === 'soal' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
+                    <i class="fa-solid fa-book-open mr-2"></i> Bank Soal
+                </button>
+                <button @click="adminTab = 'kelas'" :class="adminTab === 'kelas' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
+                    <i class="fa-solid fa-school mr-2"></i> Token & Kelas (SMP/SMA/SMK)
+                </button>
+                <button @click="adminTab = 'setting'" :class="adminTab === 'setting' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-slate-700 hover:bg-slate-100'" class="px-4 py-2 rounded-xl text-sm font-medium transition border">
+                    <i class="fa-solid fa-lock mr-2"></i> Otoritas Admin
                 </button>
             </div>
-            <template x-if="examResults.length === 0">
-                <div class="text-center py-16 text-slate-400 border-2 border-dashed rounded-2xl">
-                    <i class="fa-solid fa-folder-open text-4xl mb-2"></i>
-                    <p class="font-medium">Belum ada data ujian yang masuk ke cloud.</p>
+
+            <!-- TAB 1: REKAPITULASI NILAI -->
+            <div x-show="adminTab === 'rekap'" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-slate-800">Hasil Rekapitulasi Nilai Siswa</h3>
+                    <button @click="fetchExamResults()" class="text-sm bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-slate-700 transition">
+                        <i class="fa-solid fa-rotate mr-1"></i> Perbarui Data
+                    </button>
                 </div>
-            </template>
-            <template x-if="examResults.length > 0">
+                <template x-if="examResults.length === 0">
+                    <div class="text-center py-16 text-slate-400 border-2 border-dashed rounded-2xl">
+                        <i class="fa-solid fa-folder-open text-4xl mb-2"></i>
+                        <p class="font-medium">Belum ada data ujian yang masuk ke cloud.</p>
+                    </div>
+                </template>
+                <template x-if="examResults.length > 0">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-700 uppercase text-xs">
+                                <tr>
+                                    <th class="p-3">Nama Siswa</th>
+                                    <th class="p-3">Kelas</th>
+                                    <th class="p-3">Mata Pelajaran</th>
+                                    <th class="p-3">Nilai Akhir</th>
+                                    <th class="p-3">Waktu Selesai</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                <template x-for="res in examResults" :key="res.id">
+                                    <tr>
+                                        <td class="p-3 font-medium text-slate-900" x-text="res.name"></td>
+                                        <td class="p-3 text-slate-600" x-text="res.class"></td>
+                                        <td class="p-3 text-slate-600" x-text="res.subject"></td>
+                                        <td class="p-3"><span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-bold text-xs" x-text="res.score"></span></td>
+                                        <td class="p-3 text-slate-500 text-xs" x-text="res.timestamp"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+            </div>
+
+            <!-- TAB 2: MASTER DATA SISWA -->
+            <div x-show="adminTab === 'siswa'" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold text-slate-800">Daftar Master Data Siswa</h3>
+                    <button @click="openStudentModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+                        <i class="fa-solid fa-user-plus mr-1"></i> Tambah Siswa
+                    </button>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-50 text-slate-700 uppercase text-xs">
                             <tr>
-                                <th class="p-3">Nama Siswa</th>
+                                <th class="p-3">NIS</th>
+                                <th class="p-3">Nama Lengkap</th>
                                 <th class="p-3">Kelas</th>
-                                <th class="p-3">Mata Pelajaran</th>
-                                <th class="p-3">Nilai Akhir</th>
-                                <th class="p-3">Waktu Selesai</th>
+                                <th class="p-3 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y">
-                            <template x-for="res in examResults" :key="res.id">
+                            <template x-for="student in students" :key="student.id">
                                 <tr>
-                                    <td class="p-3 font-medium text-slate-900" x-text="res.name"></td>
-                                    <td class="p-3 text-slate-600" x-text="res.class"></td>
-                                    <td class="p-3 text-slate-600" x-text="res.subject"></td>
-                                    <td class="p-3"><span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-bold text-xs" x-text="res.score"></span></td>
-                                    <td class="p-3 text-slate-500 text-xs" x-text="res.timestamp"></td>
+                                    <td class="p-3 font-mono text-slate-600" x-text="student.nis"></td>
+                                    <td class="p-3 font-medium text-slate-900" x-text="student.name"></td>
+                                    <td class="p-3 text-slate-600" x-text="student.class"></td>
+                                    <td class="p-3 text-center space-x-2">
+                                        <button @click="deleteStudent(student.id)" class="text-red-500 hover:text-red-700 p-1.5"><i class="fa-solid fa-trash"></i></button>
+                                    </td>
                                 </tr>
                             </template>
                         </tbody>
                     </table>
                 </div>
-            </template>
-        </div>
-
-        <!-- TAB 2: MASTER DATA SISWA -->
-        <div x-show="adminTab === 'siswa'" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-semibold text-slate-800">Daftar Master Data Siswa</h3>
-                <button @click="openStudentModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm">
-                    <i class="fa-solid fa-user-plus mr-1"></i> Tambah Siswa
-                </button>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-700 uppercase text-xs">
-                        <tr>
-                            <th class="p-3">NIS</th>
-                            <th class="p-3">Nama Lengkap</th>
-                            <th class="p-3">Kelas</th>
-                            <th class="p-3 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y">
-                        <template x-for="student in students" :key="student.id">
-                            <tr>
-                                <td class="p-3 font-mono text-slate-600" x-text="student.nis"></td>
-                                <td class="p-3 font-medium text-slate-900" x-text="student.name"></td>
-                                <td class="p-3 text-slate-600" x-text="student.class"></td>
-                                <td class="p-3 text-center space-x-2">
-                                    <button @click="deleteStudent(student.id)" class="text-red-500 hover:text-red-700 p-1.5"><i class="fa-solid fa-trash"></i></button>
-                                </td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- TAB 3: BANK SOAL -->
-        <div x-show="adminTab === 'soal'" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-semibold text-slate-800">Kelola Bank Soal Ujian</h3>
-                <button @click="openQuestionModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm">
-                    <i class="fa-solid fa-circle-plus mr-1"></i> Tambah Soal
-                </button>
-            </div>
-
-            <div class="space-y-4">
-                <template x-for="(q, index) in questions" :key="q.id">
-                    <div class="border rounded-2xl p-5 bg-slate-50/50 hover:border-indigo-200 transition">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-xs font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md" x-text="'Mapel: ' + q.subject"></span>
-                            <button @click="deleteQuestion(q.id)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                        <p class="font-semibold text-slate-900 mb-3" x-text="(index + 1) + '. ' + q.question"></p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
-                            <div :class="q.correct === 'A' ? 'font-bold text-emerald-800 bg-emerald-50 p-2 rounded-xl border border-emerald-200' : 'p-2 bg-white rounded-xl border'">A. <span x-text="q.optA"></span></div>
-                            <div :class="q.correct === 'B' ? 'font-bold text-emerald-800 bg-emerald-50 p-2 rounded-xl border border-emerald-200' : 'p-2 bg-white rounded-xl border'">B. <span x-text="q.optB"></span></div>
-                            <div :class="q.correct === 'C' ? 'font-bold text-emerald-800 bg-emerald-50 p-2 rounded-xl border border-emerald-200' : 'p-2 bg-white rounded-xl border'">C. <span x-text="q.optC"></span></div>
-                            <div :class="q.correct === 'D' ? 'font-bold text-emerald-800 bg-emerald-50 p-2 rounded-xl border border-emerald-200' : 'p-2 bg-white rounded-xl border'">D. <span x-text="q.optD"></span></div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        <!-- TAB 4: TOKEN, SESI & KELOLA KELAS -->
-        <div x-show="adminTab === 'kelas'" class="space-y-6">
-            <!-- Tambah Kelas Baru (SMP / SMA / SMK) -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <h3 class="text-lg font-semibold mb-3 text-slate-800"><i class="fa-solid fa-school text-indigo-600 mr-2"></i>Kelola Tingkat & Daftar Kelas (SMP, SMA, SMK)</h3>
-                <p class="text-sm text-slate-500 mb-4">Tambahkan kelas baru (misal: 7A, 8B, 9C, 10 MIPA 1, 11 IPS, 12 Teknik, dll.) agar tersedia di pilihan dropdown.</p>
-                <div class="flex gap-3 max-w-lg">
-                    <input type="text" x-model="newClassName" placeholder="Nama Kelas (Cth: 7D, 10 TKJ, 12 MIPA)" class="w-full px-4 py-2.5 border rounded-xl text-sm">
-                    <button @click="addNewClass()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap shadow-sm">Tambah Kelas</button>
-                </div>
-                <div class="flex flex-wrap gap-2 mt-4">
-                    <template x-for="cName in classList">
-                        <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl text-xs font-semibold border flex items-center gap-2">
-                            <span x-text="cName"></span>
-                        </span>
-                    </template>
-                </div>
-            </div>
-
-            <!-- Pengaturan Token Ujian -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <h3 class="text-lg font-semibold mb-4 text-slate-800">Pengaturan Token & Sesi Ujian Aktif</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4 border p-6 rounded-2xl bg-slate-50/50">
-                        <h4 class="font-semibold text-indigo-600">Sesuaikan Token & Sesi Ujian</h4>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Target Kelas</label>
-                            <select x-model="examConfig.class" class="w-full px-3 py-2.5 border rounded-xl text-sm bg-white">
-                                <template x-for="cName in classList">
-                                    <option :value="cName" x-text="cName"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Mata Pelajaran</label>
-                            <input type="text" x-model="examConfig.subject" class="w-full px-3 py-2.5 border rounded-xl text-sm bg-white" placeholder="Contoh: Matematika">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Durasi Ujian (Menit)</label>
-                            <input type="number" x-model="examConfig.duration" class="w-full px-3 py-2.5 border rounded-xl text-sm bg-white" placeholder="60">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Token Ujian (Bisa Diketik Manual)</label>
-                            <div class="flex gap-2">
-                                <input type="text" x-model="examConfig.token" class="w-full px-3 py-2.5 border rounded-xl text-sm font-mono uppercase bg-white font-bold text-indigo-600" placeholder="Ketik token bebas atau generate">
-                                <button @click="generateToken()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm transition whitespace-nowrap">Acak Token</button>
-                            </div>
-                        </div>
-                        <button @click="saveExamConfig()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium text-sm shadow-md shadow-emerald-200 transition">Simpan & Aktifkan Ujian di Cloud</button>
-                    </div>
-                    <div class="border p-6 rounded-2xl bg-indigo-50/50 flex flex-col justify-between">
-                        <div>
-                            <h4 class="font-semibold text-slate-800 mb-3 flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-indigo-600"></i> Status Sesi Aktif Saat Ini</h4>
-                            <div class="space-y-2 text-sm text-slate-600">
-                                <p>Kelas: <strong class="text-slate-900" x-text="examConfig.class"></strong></p>
-                                <p>Mapel: <strong class="text-slate-900" x-text="examConfig.subject"></strong></p>
-                                <p>Durasi: <strong class="text-slate-900" x-text="examConfig.duration + ' Menit'"></strong></p>
-                                <p>Token Aktif: <span class="bg-indigo-600 text-white font-mono px-2.5 py-1 rounded-lg font-bold tracking-wider" x-text="examConfig.token"></span></p>
-                            </div>
-                        </div>
-                        <div class="text-xs text-slate-500 mt-6 bg-white p-3 rounded-xl border">
-                            <i class="fa-solid fa-circle-info text-indigo-600 mr-1"></i> Siswa wajib memasukkan token di atas untuk dapat mengakses soal ujian. Anda dapat mengganti token kapan saja di samping.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 5: OTORITAS ADMIN -->
-        <div x-show="adminTab === 'setting'" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-xl">
-            <h3 class="text-lg font-semibold mb-4 text-slate-800">Pengaturan Otoritas Admin</h3>
-            <form @submit.prevent="updateAdminAccount" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Username Admin Baru</label>
-                    <input type="text" x-model="adminSettings.username" required class="w-full px-4 py-2.5 border rounded-xl text-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Password Baru</label>
-                    <input type="password" x-model="adminSettings.password" required class="w-full px-4 py-2.5 border rounded-xl text-sm" placeholder="Password baru">
-                </div>
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm shadow-md shadow-indigo-200 transition">Simpan Perubahan Admin</button>
-            </form>
-        </div>
-    </div>
-    </template>
-
-    <template x-if="currentUser && currentUser.role === 'Student'">
-        <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border p-6 md:p-8">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 mb-6 gap-4">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-900" x-text="'Ujian: ' + examConfig.subject"></h2>
-                    <p class="text-sm text-slate-500" x-text="'Siswa: ' + currentUser.name + ' (' + currentUser.class + ')'"></p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="bg-amber-50 text-amber-800 px-4 py-2 rounded-xl border border-amber-200 text-sm font-bold flex items-center gap-2">
-                        <i class="fa-solid fa-clock"></i> <span x-text="formatTime(timerRemaining)"></span>
-                    </div>
-                </div>
-            </div>
-
-            <template x-if="questions.length === 0">
-                <div class="text-center py-16 text-slate-500">Soal ujian belum tersedia untuk sesi ini.</div>
-            </template>
-
-            <template x-if="questions.length > 0">
-                <div class="space-y-8">
-                    <template x-for="(q, idx) in questions" :key="q.id">
-                        <div class="border p-6 rounded-2xl bg-slate-50/50">
-                            <div class="flex justify-between items-center mb-3">
-                                <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md" x-text="'Soal No. ' + (idx + 1)"></span>
-                            </div>
-                            <p class="font-medium text-slate-900 mb-4 text-base" x-text="q.question"></p>
-                            <div class="space-y-3 text-sm">
-                                <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white cursor-pointer border bg-white transition shadow-sm">
-                                    <input type="radio" :name="'q_' + idx" value="A" x-model="studentAnswers[idx]" class="text-indigo-600 w-4 h-4">
-                                    <span>A. <span x-text="q.optA"></span></span>
-                                </label>
-                                <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white cursor-pointer border bg-white transition shadow-sm">
-                                    <input type="radio" :name="'q_' + idx" value="B" x-model="studentAnswers[idx]" class="text-indigo-600 w-4 h-4">
-                                    <span>B. <span x-text="q.optB"></span></span>
-                                </label>
-                                <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white cursor-pointer border bg-white transition shadow-sm">
-                                    <input type="radio" :name="'q_' + idx" value="C" x-model="studentAnswers[idx]" class="text-indigo-600 w-4 h-4">
-                                    <span>C. <span x-text="q.optC"></span></span>
-                                </label>
-                                <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white cursor-pointer border bg-white transition shadow-sm">
-                                    <input type="radio" :name="'q_' + idx" value="D" x-model="studentAnswers[idx]" class="text-indigo-600 w-4 h-4">
-                                    <span>D. <span x-text="q.optD"></span></span>
-                                </label>
-                            </div>
-                        </div>
-                    </template>
-                    <button @click="confirmSubmitExam()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold transition shadow-lg shadow-emerald-200 text-base">
-                        <i class="fa-solid fa-paper-plane mr-2"></i> Selesaikan & Kirim Ujian
+            <!-- TAB 3: BANK SOAL -->
+            <div x-show="adminTab === 'soal'" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold text-slate-800">Kelola Bank Soal Ujian</h3>
+                    <button @click="openQuestionModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+                        <i class="fa-solid fa-circle-plus mr-1"></i> Tambah Soal
                     </button>
                 </div>
-            </template>
-        </div>
-    </template>
 
-    <!-- MODAL TAMBAH SISWA -->
-    <div x-show="showStudentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <h3 class="text-lg font-bold mb-4 text-slate-900">Tambah Data Siswa</h3>
-            <form @submit.prevent="saveStudent" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Nomor Induk Siswa (NIS)</label>
-                    <input type="text" x-model="newStudent.nis" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm">
+                <div class="space-y-4">
+                    <template x-for="(q, index) in questions" :key="q.id">
+                        <div class="border rounded-2xl p-5 bg-slate-50/50 hover:border-indigo-200 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md" x-text="'Mapel: ' + q.subject"></span>
+                                <button @click="deleteQuestion(q.id)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                            <p class="font-semibold text-slate-900 mb-3" x-text="(index + 1) + '. ' + q.question"></p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
+                                <div :class="q.correct === 'A' ? 'font-bold text-emerald-800 bg-emerald-50 p-2 rounded-xl border border-emerald-200' : 'p-2 bg-white rounded-xl border'">A. <span x-text="q.optA"></span></div>
+                                <div :class="q.correct === 'B' ? 'font-bold text-emerald-800 bg-emerald-50 p-2 rounded-xl border border-emerald-200' : 'p-2 bg-white rounded-xl border'">B. <span x-text="q.optB"></span></div>
+                                <div :class="q.correct === 'C' ? 'font-bold text-emerald-800 bg-emerald-50 p-2 rounded-xl border border-emerald-200' : 'p-2 bg-white rounded-xl border'">C. <span x-text="q.optC"></span></div>
+                                <div :class="q.correct === 'D' ? 'font-bold text-emerald-800 bg-emerald-50 p-2 rounded-xl border border-emerald-200' : 'p-2 bg-white rounded-xl border'">D. <span x-text="q.optD"></span></div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
-                    <input type="text" x-model="newStudent.name" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Kelas (SMP / SMA / SMK)</label>
-                    <select x-model="newStudent.class" class="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-white">
+            </div>
+
+            <!-- TAB 4: TOKEN, SESI & KELOLA KELAS -->
+            <div x-show="adminTab === 'kelas'" class="space-y-6">
+                <!-- Tambah Kelas Baru (SMP / SMA / SMK) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                    <h3 class="text-lg font-semibold mb-3 text-slate-800"><i class="fa-solid fa-school text-indigo-600 mr-2"></i>Kelola Tingkat & Daftar Kelas (SMP 7-9 & SMA/SMK 10-12)</h3>
+                    <p class="text-sm text-slate-500 mb-4">Tambahkan kelas baru atau pilih dari daftar kelas yang tersedia untuk SMP, SMA, maupun SMK.</p>
+                    <div class="flex gap-3 max-w-lg">
+                        <input type="text" x-model="newClassName" placeholder="Nama Kelas (Cth: 7D, 10 TKJ, 12 MIPA)" class="w-full px-4 py-2.5 border rounded-xl text-sm">
+                        <button @click="addNewClass()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap shadow-sm">Tambah Kelas</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-4">
                         <template x-for="cName in classList">
-                            <option :value="cName" x-text="cName"></option>
+                            <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl text-xs font-semibold border flex items-center gap-2">
+                                <span x-text="cName"></span>
+                            </span>
                         </template>
-                    </select>
+                    </div>
                 </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" @click="showStudentModal = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Batal</button>
-                    <button type="submit" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
-    <!-- MODAL TAMBAH SOAL -->
-    <div x-show="showQuestionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <h3 class="text-lg font-bold mb-4 text-slate-900">Tambah Soal Baru</h3>
-            <form @submit.prevent="saveQuestion" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Mata Pelajaran</label>
-                    <input type="text" x-model="newQuestion.subject" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm" placeholder="Contoh: Matematika">
+                <!-- Pengaturan Token Ujian -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                    <h3 class="text-lg font-semibold mb-4 text-slate-800">Pengaturan Token & Sesi Ujian Aktif</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4 border p-6 rounded-2xl bg-slate-50/50">
+                            <h4 class="font-semibold text-indigo-600">Sesuaikan Token & Sesi Ujian</h4>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Target Kelas</label>
+                                <select x-model="examConfig.class" class="w-full px-3 py-2.5 border rounded-xl text-sm bg-white">
+                                    <template x-for="cName in classList">
+                                        <option :value="cName" x-text="cName"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Mata Pelajaran</label>
+                                <input type="text" x-model="examConfig.subject" class="w-full px-3 py-2.5 border rounded-xl text-sm bg-white" placeholder="Contoh: Matematika">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Durasi Ujian (Menit)</label>
+                                <input type="number" x-model="examConfig.duration" class="w-full px-3 py-2.5 border rounded-xl text-sm bg-white" placeholder="60">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Token Ujian (Bisa Diketik Manual)</label>
+                                <div class="flex gap-2">
+                                    <input type="text" x-model="examConfig.token" class="w-full px-3 py-2.5 border rounded-xl text-sm font-mono uppercase bg-white font-bold text-indigo-600" placeholder="Ketik token bebas atau generate">
+                                    <button @click="generateToken()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm transition whitespace-nowrap">Acak Token</button>
+                                </div>
+                            </div>
+                            <button @click="saveExamConfig()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium text-sm shadow-md shadow-emerald-200 transition">Simpan & Aktifkan Ujian di Cloud</button>
+                        </div>
+                        <div class="border p-6 rounded-2xl bg-indigo-50/50 flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-semibold text-slate-800 mb-3 flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-indigo-600"></i> Status Sesi Aktif Saat Ini</h4>
+                                <div class="space-y-2 text-sm text-slate-600">
+                                    <p>Kelas: <strong class="text-slate-900" x-text="examConfig.class"></strong></p>
+                                    <p>Mapel: <strong class="text-slate-900" x-text="examConfig.subject"></strong></p>
+                                    <p>Durasi: <strong class="text-slate-900" x-text="examConfig.duration + ' Menit'"></strong></p>
+                                    <p>Token Aktif: <span class="bg-indigo-600 text-white font-mono px-2.5 py-1 rounded-lg font-bold tracking-wider" x-text="examConfig.token"></span></p>
+                                </div>
+                            </div>
+                            <div class="text-xs text-slate-500 mt-6 bg-white p-3 rounded-xl border">
+                                <i class="fa-solid fa-circle-info text-indigo-600 mr-1"></i> Siswa wajib memasukkan token di atas untuk dapat mengakses soal ujian. Anda dapat mengganti token kapan saja di samping.
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Pertanyaan</label>
-                    <textarea x-model="newQuestion.question" rows="3" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm"></textarea>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="text" x-model="newQuestion.optA" placeholder="Pilihan A" required class="px-3.5 py-2.5 border rounded-xl text-sm">
-                    <input type="text" x-model="newQuestion.optB" placeholder="Pilihan B" required class="px-3.5 py-2.5 border rounded-xl text-sm">
-                    <input type="text" x-model="newQuestion.optC" placeholder="Pilihan C" required class="px-3.5 py-2.5 border rounded-xl text-sm">
-                    <input type="text" x-model="newQuestion.optD" placeholder="Pilihan D" required class="px-3.5 py-2.5 border rounded-xl text-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Kunci Jawaban Benar</label>
-                    <select x-model="newQuestion.correct" class="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-white">
-                        <option value="A">A</option>
-                        <option value="B">B</option>
-                        <option value="C">C</option>
-                        <option value="D">D</option>
-                    </select>
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" @click="showQuestionModal = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Batal</button>
-                    <button type="submit" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">Simpan Soal</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- CUSTOM MESSAGE / NOTIFICATION MODAL -->
-    <div x-show="modal.show" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
-            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl"
-                 :class="modal.type === 'success' ? 'bg-emerald-100 text-emerald-600' : (modal.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600')">
-                <i class="fa-solid" :class="modal.type === 'success' ? 'fa-check' : (modal.type === 'error' ? 'fa-triangle-exclamation' : 'fa-info')"></i>
             </div>
-            <h3 class="text-lg font-bold text-slate-900 mb-1" x-text="modal.title"></h3>
-            <p class="text-sm text-slate-600 mb-6" x-text="modal.message"></p>
-            <div class="flex gap-2 justify-center">
-                <template x-if="modal.isConfirm">
-                    <button @click="modal.show = false; if(modal.onCancel) modal.onCancel();" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Batal</button>
+
+            <!-- TAB 5: OTORITAS ADMIN -->
+            <div x-show="adminTab === 'setting'" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-xl">
+                <h3 class="text-lg font-semibold mb-4 text-slate-800">Pengaturan Otoritas Admin</h3>
+                <form @submit.prevent="updateAdminAccount" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Username Admin Baru</label>
+                        <input type="text" x-model="adminSettings.username" required class="w-full px-4 py-2.5 border rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Password Baru</label>
+                        <input type="password" x-model="adminSettings.password" required class="w-full px-4 py-2.5 border rounded-xl text-sm" placeholder="Password baru">
+                    </div>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm shadow-md shadow-indigo-200 transition">Simpan Perubahan Admin</button>
+                </form>
+            </div>
+        </div>
+        </template>
+
+        <template x-if="currentUser && currentUser.role === 'Student'">
+            <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border p-6 md:p-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 mb-6 gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900" x-text="'Ujian: ' + examConfig.subject"></h2>
+                        <p class="text-sm text-slate-500" x-text="'Siswa: ' + currentUser.name + ' (' + currentUser.class + ')'"></p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="bg-amber-50 text-amber-800 px-4 py-2 rounded-xl border border-amber-200 text-sm font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-clock"></i> <span x-text="formatTime(timerRemaining)"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <template x-if="questions.length === 0">
+                    <div class="text-center py-16 text-slate-500">Soal ujian belum tersedia untuk sesi ini.</div>
                 </template>
-                <button @click="modal.show = false; if(modal.onConfirm) modal.onConfirm();" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">OK</button>
+
+                <template x-if="questions.length > 0">
+                    <div class="space-y-8">
+                        <template x-for="(q, idx) in questions" :key="q.id">
+                            <div class="border p-6 rounded-2xl bg-slate-50/50">
+                                <div class="flex justify-between items-center mb-3">
+                                    <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md" x-text="'Soal No. ' + (idx + 1)"></span>
+                                </div>
+                                <p class="font-medium text-slate-900 mb-4 text-base" x-text="q.question"></p>
+                                <div class="space-y-3 text-sm">
+                                    <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white cursor-pointer border bg-white transition shadow-sm">
+                                        <input type="radio" :name="'q_' + idx" value="A" x-model="studentAnswers[idx]" class="text-indigo-600 w-4 h-4">
+                                        <span>A. <span x-text="q.optA"></span></span>
+                                    </label>
+                                    <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white cursor-pointer border bg-white transition shadow-sm">
+                                        <input type="radio" :name="'q_' + idx" value="B" x-model="studentAnswers[idx]" class="text-indigo-600 w-4 h-4">
+                                        <span>B. <span x-text="q.optB"></span></span>
+                                    </label>
+                                    <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white cursor-pointer border bg-white transition shadow-sm">
+                                        <input type="radio" :name="'q_' + idx" value="C" x-model="studentAnswers[idx]" class="text-indigo-600 w-4 h-4">
+                                        <span>C. <span x-text="q.optC"></span></span>
+                                    </label>
+                                    <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-white cursor-pointer border bg-white transition shadow-sm">
+                                        <input type="radio" :name="'q_' + idx" value="D" x-model="studentAnswers[idx]" class="text-indigo-600 w-4 h-4">
+                                        <span>D. <span x-text="q.optD"></span></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </template>
+                        <button @click="confirmSubmitExam()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold transition shadow-lg shadow-emerald-200 text-base">
+                            <i class="fa-solid fa-paper-plane mr-2"></i> Selesaikan & Kirim Ujian
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- MODAL TAMBAH SISWA -->
+        <div x-show="showStudentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                <h3 class="text-lg font-bold mb-4 text-slate-900">Tambah Data Siswa</h3>
+                <form @submit.prevent="saveStudent" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nomor Induk Siswa (NIS)</label>
+                        <input type="text" x-model="newStudent.nis" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                        <input type="text" x-model="newStudent.name" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Kelas (SMP / SMA / SMK)</label>
+                        <select x-model="newStudent.class" class="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-white">
+                            <template x-for="cName in classList">
+                                <option :value="cName" x-text="cName"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-2">
+                        <button type="button" @click="showStudentModal = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Batal</button>
+                        <button type="submit" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">Simpan</button>
+                    </div>
+                </form>
             </div>
         </div>
-    </div>
 
-</main>
+        <!-- MODAL TAMBAH SOAL -->
+        <div x-show="showQuestionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+                <h3 class="text-lg font-bold mb-4 text-slate-900">Tambah Soal Baru</h3>
+                <form @submit.prevent="saveQuestion" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Mata Pelajaran</label>
+                        <input type="text" x-model="newQuestion.subject" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm" placeholder="Contoh: Matematika">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Pertanyaan</label>
+                        <textarea x-model="newQuestion.question" rows="3" required class="w-full px-3.5 py-2.5 border rounded-xl text-sm"></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="text" x-model="newQuestion.optA" placeholder="Pilihan A" required class="px-3.5 py-2.5 border rounded-xl text-sm">
+                        <input type="text" x-model="newQuestion.optB" placeholder="Pilihan B" required class="px-3.5 py-2.5 border rounded-xl text-sm">
+                        <input type="text" x-model="newQuestion.optC" placeholder="Pilihan C" required class="px-3.5 py-2.5 border rounded-xl text-sm">
+                        <input type="text" x-model="newQuestion.optD" placeholder="Pilihan D" required class="px-3.5 py-2.5 border rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Kunci Jawaban Benar</label>
+                        <select x-model="newQuestion.correct" class="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-white">
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-2">
+                        <button type="button" @click="showQuestionModal = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Batal</button>
+                        <button type="submit" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">Simpan Soal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-<footer class="text-center py-6 text-sm text-slate-500 border-t bg-white mt-12">
-    &copy; 2026 CBT Online Platform. SMP & SMA/SMK Multi-Tier Active.
-</footer>
+        <!-- CUSTOM MESSAGE / NOTIFICATION MODAL -->
+        <div x-show="modal.show" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl"
+                     :class="modal.type === 'success' ? 'bg-emerald-100 text-emerald-600' : (modal.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600')">
+                    <i class="fa-solid" :class="modal.type === 'success' ? 'fa-check' : (modal.type === 'error' ? 'fa-triangle-exclamation' : 'fa-info')"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-1" x-text="modal.title"></h3>
+                <p class="text-sm text-slate-600 mb-6" x-text="modal.message"></p>
+                <div class="flex gap-2 justify-center">
+                    <template x-if="modal.isConfirm">
+                        <button @click="modal.show = false; if(modal.onCancel) modal.onCancel();" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Batal</button>
+                    </template>
+                    <button @click="modal.show = false; if(modal.onConfirm) modal.onConfirm();" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm">OK</button>
+                </div>
+            </div>
+        </div>
 
-<!-- Alpine.js Initialization -->
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('cbtApp', () => ({
-            loginTab: 'admin',
-            currentUser: null,
-            adminTab: 'rekap',
-            showStudentModal: false,
-            showQuestionModal: false,
-            
-            adminCredentials: { username: 'Administrator', password: 'password123' },
-            adminForm: { username: '', password: '' },
-            adminSettings: { username: 'Administrator', password: '' },
-            
-            studentForm: { nis: '', token: '' },
-            
-            examConfig: {
-                class: '10 MIPA 1',
-                subject: 'Matematika Dasar',
-                token: 'CBT2026',
-                duration: 60
-            },
-            
-            classList: [
-                '7A', '7B', '7C', 
-                '8A', '8B', '8C', 
-                '9A', '9B', '9C', 
-                '10 MIPA 1', '10 MIPA 2', '10 IPS 1', 
-                '11 MIPA 1', '11 IPS 1', 
-                '12 MIPA 1', '12 IPS 1',
-                '10 SMK TKJ', '11 SMK TKJ', '12 SMK TKJ'
-            ],
-            newClassName: '',
-            students: [],
-            questions: [],
-            examResults: [],
-            
-            newStudent: { nis: '', name: '', class: '10 MIPA 1' },
-            newQuestion: { subject: '', question: '', optA: '', optB: '', optC: '', optD: '', correct: 'A' },
-            
-            studentAnswers: {},
-            timerRemaining: 3600,
-            timerInterval: null,
+    </main>
 
-            modal: {
-                show: false,
-                title: '',
-                message: '',
-                type: 'info',
-                isConfirm: false,
-                onConfirm: null,
-                onCancel: null
-            },
+    <footer class="text-center py-6 text-sm text-slate-500 border-t bg-white mt-12">
+        &copy; 2026 CBT Online Platform. SMP (7-9) & SMA/SMK (10-12) Active.
+    </footer>
 
-            showAlert(title, message, type = 'info') {
-                this.modal = { show: true, title, message, type, isConfirm: false, onConfirm: null, onCancel: null };
-            },
-
-            showConfirm(title, message, onConfirm, onCancel = null) {
-                this.modal = { show: true, title, message, type: 'info', isConfirm: true, onConfirm, onCancel };
-            },
-
-            addNewClass() {
-                if(!this.newClassName.trim()) {
-                    this.showAlert("Peringatan", "Nama kelas tidak boleh kosong!", "error");
-                    return;
-                }
-                const formattedName = this.newClassName.trim().toUpperCase();
-                if(this.classList.includes(formattedName)) {
-                    this.showAlert("Peringatan", "Kelas tersebut sudah ada dalam daftar!", "error");
-                    return;
-                }
-                this.classList.push(formattedName);
-                this.newClassName = '';
-                this.showAlert("Sukses", "Kelas baru berhasil ditambahkan!", "success");
-            },
-
-            async initFirebase() {
-                try {
-                    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-                    const { getAuth, signInAnonymously, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-                    const { getFirestore } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", projectId: "demo" };
-
-                    const app = initializeApp(firebaseConfig);
-                    window.db = getFirestore(app);
-                    window.auth = getAuth(app);
-
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(window.auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(window.auth);
-                    }
-
-                    this.setupRealtimeListeners();
-                } catch (e) {
-                    console.error("Firebase init error:", e);
-                    this.loadLocalFallback();
-                }
-            },
-
-            setupRealtimeListeners() {
-                if (!window.db) return;
+    <!-- Alpine.js Initialization -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('cbtApp', () => ({
+                loginTab: 'admin',
+                currentUser: null,
+                adminTab: 'rekap',
+                showStudentModal: false,
+                showQuestionModal: false,
                 
-                import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js").then(({ collection, onSnapshot }) => {
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                adminCredentials: { username: 'Administrator', password: 'password123' },
+                adminForm: { username: '', password: '' },
+                adminSettings: { username: 'Administrator', password: '' },
+                
+                studentForm: { nis: '', token: '' },
+                
+                examConfig: {
+                    class: '10 MIPA 1',
+                    subject: 'Matematika Dasar',
+                    token: 'CBT2026',
+                    duration: 60
+                },
+                
+                classList: [
+                    '7A', '7B', '7C', 
+                    '8A', '8B', '8C', 
+                    '9A', '9B', '9C', 
+                    '10 MIPA 1', '10 MIPA 2', '10 IPS 1', 
+                    '11 MIPA 1', '11 IPS 1', 
+                    '12 MIPA 1', '12 IPS 1',
+                    '10 SMK TKJ', '11 SMK TKJ', '12 SMK TKJ'
+                ],
+                newClassName: '',
+                students: [],
+                questions: [],
+                examResults: [],
+                
+                newStudent: { nis: '', name: '', class: '10 MIPA 1' },
+                newQuestion: { subject: '', question: '', optA: '', optB: '', optC: '', optD: '', correct: 'A' },
+                
+                studentAnswers: {},
+                timerRemaining: 3600,
+                timerInterval: null,
+
+                modal: {
+                    show: false,
+                    title: '',
+                    message: '',
+                    type: 'info',
+                    isConfirm: false,
+                    onConfirm: null,
+                    onCancel: null
+                },
+
+                showAlert(title, message, type = 'info') {
+                    this.modal = { show: true, title, message, type, isConfirm: false, onConfirm: null, onCancel: null };
+                },
+
+                showConfirm(title, message, onConfirm, onCancel = null) {
+                    this.modal = { show: true, title, message, type: 'info', isConfirm: true, onConfirm, onCancel };
+                },
+
+                addNewClass() {
+                    if(!this.newClassName.trim()) {
+                        this.showAlert("Peringatan", "Nama kelas tidak boleh kosong!", "error");
+                        return;
+                    }
+                    const formattedName = this.newClassName.trim().toUpperCase();
+                    if(this.classList.includes(formattedName)) {
+                        this.showAlert("Peringatan", "Kelas tersebut sudah ada dalam daftar!", "error");
+                        return;
+                    }
+                    this.classList.push(formattedName);
+                    this.newClassName = '';
+                    this.showAlert("Sukses", "Kelas baru berhasil ditambahkan!", "success");
+                },
+
+                async initFirebase() {
+                    try {
+                        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+                        const { getAuth, signInAnonymously, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+                        const { getFirestore } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", projectId: "demo" };
+
+                        const app = initializeApp(firebaseConfig);
+                        window.db = getFirestore(app);
+                        window.auth = getAuth(app);
+
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(window.auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(window.auth);
+                        }
+
+                        this.setupRealtimeListeners();
+                    } catch (e) {
+                        console.error("Firebase init error:", e);
+                        this.loadLocalFallback();
+                    }
+                },
+
+                setupRealtimeListeners() {
+                    if (!window.db) return;
                     
-                    onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'), (snapshot) => {
-                        this.students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        if(this.students.length === 0) this.seedDefaultData();
-                    }, (err) => console.error(err));
+                    import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js").then(({ collection, onSnapshot }) => {
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                        
+                        onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'), (snapshot) => {
+                            this.students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            if(this.students.length === 0) this.seedDefaultData();
+                        }, (err) => console.error(err));
 
-                    onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'), (snapshot) => {
-                        this.questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    }, (err) => console.error(err));
+                        onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'), (snapshot) => {
+                            this.questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        }, (err) => console.error(err));
 
-                    onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'examResults'), (snapshot) => {
-                        this.examResults = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    }, (err) => console.error(err));
-                });
-            },
+                        onSnapshot(collection(window.db, 'artifacts', appId, 'public', 'data', 'examResults'), (snapshot) => {
+                            this.examResults = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        }, (err) => console.error(err));
+                    });
+                },
 
-            async seedDefaultData() {
-                try {
-                    const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                    
-                    const defaultStudent = { nis: '1001', name: 'Ahmad Fauzi', class: '7A' };
-                    const sRef = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'));
-                    await setDoc(sRef, defaultStudent);
+                async seedDefaultData() {
+                    try {
+                        const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                        
+                        const defaultStudent = { nis: '1001', name: 'Ahmad Fauzi', class: '7A' };
+                        const sRef = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'));
+                        await setDoc(sRef, defaultStudent);
 
-                    const defaultQ = { subject: 'Matematika Dasar', question: 'Berapakah hasil dari 15 + 5 x 2?', optA: '40', optB: '25', optC: '30', optD: '20', correct: 'B' };
-                    const qRef = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'));
-                    await setDoc(qRef, defaultQ);
-                } catch (e) {
-                    console.error(e);
-                }
-            },
+                        const defaultQ = { subject: 'Matematika Dasar', question: 'Berapakah hasil dari 15 + 5 x 2?', optA: '40', optB: '25', optC: '30', optD: '20', correct: 'B' };
+                        const qRef = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'));
+                        await setDoc(qRef, defaultQ);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                },
 
-            loadLocalFallback() {
-                this.students = [
-                    { id: '1', nis: '1001', name: 'Ahmad Fauzi', class: '7A' },
-                    { id: '2', nis: '1002', name: 'Siti Rahma', class: '10 MIPA 1' }
-                ];
-                this.questions = [
-                    { id: '1', subject: 'Matematika Dasar', question: 'Berapakah hasil dari 15 + 5 x 2?', optA: '40', optB: '25', optC: '30', optD: '20', correct: 'B' }
-                ];
-            },
+                loadLocalFallback() {
+                    this.students = [
+                        { id: '1', nis: '1001', name: 'Ahmad Fauzi', class: '7A' },
+                        { id: '2', nis: '1002', name: 'Siti Rahma', class: '10 MIPA 1' }
+                    ];
+                    this.questions = [
+                        { id: '1', subject: 'Matematika Dasar', question: 'Berapakah hasil dari 15 + 5 x 2?', optA: '40', optB: '25', optC: '30', optD: '20', correct: 'B' }
+                    ];
+                },
 
-            adminLogin() {
-                if (this.adminForm.username === this.adminCredentials.username && this.adminForm.password === this.adminCredentials.password) {
-                    this.currentUser = { role: 'Administrator', name: 'Administrator' };
-                    this.showAlert("Berhasil", "Selamat datang di Dasbor Admin CBT", "success");
-                } else {
-                    this.showAlert("Gagal Login", "Username atau password admin salah!", "error");
-                }
-            },
-
-            studentLogin() {
-                const found = this.students.find(s => s.nis === this.studentForm.nis);
-                if (!found) {
-                    this.showAlert("NIS Tidak Ditemukan", "Nomor Induk Siswa tidak terdaftar dalam Master Data!", "error");
-                    return;
-                }
-                if (this.studentForm.token.toUpperCase() !== this.examConfig.token.toUpperCase()) {
-                    this.showAlert("Token Salah", "Token ujian salah atau sesi belum aktif!", "error");
-                    return;
-                }
-                this.currentUser = { role: 'Student', name: found.name, class: found.class, nis: found.nis };
-                this.studentAnswers = {};
-                this.timerRemaining = (this.examConfig.duration || 60) * 60;
-                this.startTimer();
-            },
-
-            startTimer() {
-                if(this.timerInterval) clearInterval(this.timerInterval);
-                this.timerInterval = setInterval(() => {
-                    if(this.timerRemaining > 0) {
-                        this.timerRemaining--;
+                adminLogin() {
+                    if (this.adminForm.username === this.adminCredentials.username && this.adminForm.password === this.adminCredentials.password) {
+                        this.currentUser = { role: 'Administrator', name: 'Administrator' };
+                        this.showAlert("Berhasil", "Selamat datang di Dasbor Admin CBT", "success");
                     } else {
-                        clearInterval(this.timerInterval);
-                        this.showAlert("Waktu Habis", "Waktu ujian telah habis. Jawaban akan dikirim otomatis.", "error");
+                        this.showAlert("Gagal Login", "Username atau password admin salah!", "error");
+                    }
+                },
+
+                studentLogin() {
+                    const found = this.students.find(s => s.nis === this.studentForm.nis);
+                    if (!found) {
+                        this.showAlert("NIS Tidak Ditemukan", "Nomor Induk Siswa tidak terdaftar dalam Master Data!", "error");
+                        return;
+                    }
+                    if (this.studentForm.token.toUpperCase() !== this.examConfig.token.toUpperCase()) {
+                        this.showAlert("Token Salah", "Token ujian salah atau sesi belum aktif!", "error");
+                        return;
+                    }
+                    this.currentUser = { role: 'Student', name: found.name, class: found.class, nis: found.nis };
+                    this.studentAnswers = {};
+                    this.timerRemaining = (this.examConfig.duration || 60) * 60;
+                    this.startTimer();
+                },
+
+                startTimer() {
+                    if(this.timerInterval) clearInterval(this.timerInterval);
+                    this.timerInterval = setInterval(() => {
+                        if(this.timerRemaining > 0) {
+                            this.timerRemaining--;
+                        } else {
+                            clearInterval(this.timerInterval);
+                            this.showAlert("Waktu Habis", "Waktu ujian telah habis. Jawaban akan dikirim otomatis.", "error");
+                            this.submitExam();
+                        }
+                    }, 1000);
+                },
+
+                formatTime(seconds) {
+                    const m = Math.floor(seconds / 60);
+                    const s = seconds % 60;
+                    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                },
+
+                logout() {
+                    if(this.timerInterval) clearInterval(this.timerInterval);
+                    this.currentUser = null;
+                    this.adminForm = { username: '', password: '' };
+                    this.studentForm = { nis: '', token: '' };
+                },
+
+                openStudentModal() {
+                    this.newStudent = { nis: '', name: '', class: this.classList[0] };
+                    this.showStudentModal = true;
+                },
+
+                async saveStudent() {
+                    try {
+                        if(window.db) {
+                            const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                            const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'));
+                            await setDoc(ref, this.newStudent);
+                        } else {
+                            this.students.push({ id: Date.now().toString(), ...this.newStudent });
+                        }
+                        this.showStudentModal = false;
+                        this.showAlert("Sukses", "Data siswa berhasil ditambahkan!", "success");
+                    } catch(e) {
+                        this.showAlert("Error", "Gagal menyimpan data siswa.", "error");
+                    }
+                },
+
+                deleteStudent(id) {
+                    this.showConfirm("Hapus Siswa", "Apakah Anda yakin ingin menghapus data siswa ini?", async () => {
+                        try {
+                            if(window.db) {
+                                const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                                await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'students', id));
+                            } else {
+                                this.students = this.students.filter(s => s.id !== id);
+                            }
+                            this.showAlert("Sukses", "Siswa berhasil dihapus.", "success");
+                        } catch(e) {
+                            this.showAlert("Error", "Gagal menghapus siswa.", "error");
+                        }
+                    });
+                },
+
+                openQuestionModal() {
+                    this.newQuestion = { subject: this.examConfig.subject, question: '', optA: '', optB: '', optC: '', optD: '', correct: 'A' };
+                    this.showQuestionModal = true;
+                },
+
+                async saveQuestion() {
+                    try {
+                        if(window.db) {
+                            const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                            const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'));
+                            await setDoc(ref, this.newQuestion);
+                        } else {
+                            this.questions.push({ id: Date.now().toString(), ...this.newQuestion });
+                        }
+                        this.showQuestionModal = false;
+                        this.showAlert("Sukses", "Soal baru berhasil ditambahkan ke bank soal!", "success");
+                    } catch(e) {
+                        this.showAlert("Error", "Gagal menyimpan soal.", "error");
+                    }
+                },
+
+                deleteQuestion(id) {
+                    this.showConfirm("Hapus Soal", "Apakah Anda yakin ingin menghapus soal ini?", async () => {
+                        try {
+                            if(window.db) {
+                                const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
+                                await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'questions', id));
+                            } else {
+                                this.questions = this.questions.filter(q => q.id !== id);
+                            }
+                            this.showAlert("Sukses", "Soal berhasil dihapus.", "success");
+                        } catch(e) {
+                            this.showAlert("Error", "Gagal menghapus soal.", "error");
+                        }
+                    });
+                },
+
+                generateToken() {
+                    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                    let token = '';
+                    for (let i = 0; i < 6; i++) {
+                        token += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    this.examConfig.token = token;
+                },
+
+                saveExamConfig() {
+                    this.showAlert("Sesi Diaktifkan", "Token ujian aktif berhasil diperbarui ke: " + this.examConfig.token, "success");
+                },
+
+                updateAdminAccount() {
+                    this.adminCredentials.username = this.adminSettings.username;
+                    this.adminCredentials.password = this.adminSettings.password;
+                    this.showAlert("Sukses", "Otoritas admin berhasil diperbarui!", "success");
+                },
+
+                confirmSubmitExam() {
+                    this.showConfirm("Kirim Ujian", "Apakah Anda yakin ingin menyelesaikan dan mengirim jawaban ujian?", () => {
                         this.submitExam();
-                    }
-                }, 1000);
-            },
+                    });
+                },
 
-            formatTime(seconds) {
-                const m = Math.floor(seconds / 60);
-                const s = seconds % 60;
-                return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            },
+                async submitExam() {
+                    if(this.timerInterval) clearInterval(this.timerInterval);
+                    let correctCount = 0;
+                    this.questions.forEach((q, idx) => {
+                        if(this.studentAnswers[idx] && this.studentAnswers[idx] === q.correct) {
+                            correctCount++;
+                        }
+                    });
+                    const finalScore = this.questions.length > 0 ? Math.round((correctCount / this.questions.length) * 100) : 0;
+                    
+                    const resultEntry = {
+                        name: this.currentUser.name,
+                        class: this.currentUser.class,
+                        subject: this.examConfig.subject,
+                        score: finalScore,
+                        timestamp: new Date().toLocaleString()
+                    };
 
-            logout() {
-                if(this.timerInterval) clearInterval(this.timerInterval);
-                this.currentUser = null;
-                this.adminForm = { username: '', password: '' };
-                this.studentForm = { nis: '', token: '' };
-            },
-
-            openStudentModal() {
-                this.newStudent = { nis: '', name: '', class: this.classList[0] };
-                this.showStudentModal = true;
-            },
-
-            async saveStudent() {
-                try {
-                    if(window.db) {
-                        const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                        const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'students'));
-                        await setDoc(ref, this.newStudent);
-                    } else {
-                        this.students.push({ id: Date.now().toString(), ...this.newStudent });
-                    }
-                    this.showStudentModal = false;
-                    this.showAlert("Sukses", "Data siswa berhasil ditambahkan!", "success");
-                } catch(e) {
-                    this.showAlert("Error", "Gagal menyimpan data siswa.", "error");
-                }
-            },
-
-            deleteStudent(id) {
-                this.showConfirm("Hapus Siswa", "Apakah Anda yakin ingin menghapus data siswa ini?", async () => {
                     try {
                         if(window.db) {
-                            const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                            const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
                             const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                            await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'students', id));
+                            const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'examResults'));
+                            await setDoc(ref, resultEntry);
                         } else {
-                            this.students = this.students.filter(s => s.id !== id);
+                            this.examResults.push({ id: Date.now().toString(), ...resultEntry });
                         }
-                        this.showAlert("Sukses", "Siswa berhasil dihapus.", "success");
                     } catch(e) {
-                        this.showAlert("Error", "Gagal menghapus siswa.", "error");
+                        console.error(e);
                     }
-                });
-            },
 
-            openQuestionModal() {
-                this.newQuestion = { subject: this.examConfig.subject, question: '', optA: '', optB: '', optC: '', optD: '', correct: 'A' };
-                this.showQuestionModal = true;
-            },
-
-            async saveQuestion() {
-                try {
-                    if(window.db) {
-                        const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                        const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'questions'));
-                        await setDoc(ref, this.newQuestion);
-                    } else {
-                        this.questions.push({ id: Date.now().toString(), ...this.newQuestion });
-                    }
-                    this.showQuestionModal = false;
-                    this.showAlert("Sukses", "Soal baru berhasil ditambahkan ke bank soal!", "success");
-                } catch(e) {
-                    this.showAlert("Error", "Gagal menyimpan soal.", "error");
+                    this.showAlert("Ujian Selesai", "Nilai Akhir Anda: " + finalScore, "success");
+                    this.logout();
                 }
-            },
-
-            deleteQuestion(id) {
-                this.showConfirm("Hapus Soal", "Apakah Anda yakin ingin menghapus soal ini?", async () => {
-                    try {
-                        if(window.db) {
-                            const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                            await deleteDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'questions', id));
-                        } else {
-                            this.questions = this.questions.filter(q => q.id !== id);
-                        }
-                        this.showAlert("Sukses", "Soal berhasil dihapus.", "success");
-                    } catch(e) {
-                        this.showAlert("Error", "Gagal menghapus soal.", "error");
-                    }
-                });
-            },
-
-            generateToken() {
-                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                let token = '';
-                for (let i = 0; i < 6; i++) {
-                    token += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-                this.examConfig.token = token;
-            },
-
-            saveExamConfig() {
-                this.showAlert("Sesi Diaktifkan", "Token ujian aktif berhasil diperbarui ke: " + this.examConfig.token, "success");
-            },
-
-            updateAdminAccount() {
-                this.adminCredentials.username = this.adminSettings.username;
-                this.adminCredentials.password = this.adminSettings.password;
-                this.showAlert("Sukses", "Otoritas admin berhasil diperbarui!", "success");
-            },
-
-            confirmSubmitExam() {
-                this.showConfirm("Kirim Ujian", "Apakah Anda yakin ingin menyelesaikan dan mengirim jawaban ujian?", () => {
-                    this.submitExam();
-                });
-            },
-
-            async submitExam() {
-                if(this.timerInterval) clearInterval(this.timerInterval);
-                let correctCount = 0;
-                this.questions.forEach((q, idx) => {
-                    if(this.studentAnswers[idx] && this.studentAnswers[idx] === q.correct) {
-                        correctCount++;
-                    }
-                });
-                const finalScore = this.questions.length > 0 ? Math.round((correctCount / this.questions.length) * 100) : 0;
-                
-                const resultEntry = {
-                    name: this.currentUser.name,
-                    class: this.currentUser.class,
-                    subject: this.examConfig.subject,
-                    score: finalScore,
-                    timestamp: new Date().toLocaleString()
-                };
-
-                try {
-                    if(window.db) {
-                        const { collection, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cbt-edu-system-v1';
-                        const ref = doc(collection(window.db, 'artifacts', appId, 'public', 'data', 'examResults'));
-                        await setDoc(ref, resultEntry);
-                    } else {
-                        this.examResults.push({ id: Date.now().toString(), ...resultEntry });
-                    }
-                } catch(e) {
-                    console.error(e);
-                }
-
-                this.showAlert("Ujian Selesai", "Nilai Akhir Anda: " + finalScore, "success");
-                this.logout();
-            }
-        }));
-    });
-</script>
+            }));
+        });
+    </script>
+</body>
+</html>
